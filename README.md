@@ -23,7 +23,7 @@
 
 ## 构建、发布和应用内更新
 
-GitHub Actions 在分支推送和 Pull Request 时构建、检查日历及布局；`vX.Y.Z` 标签通过检查后额外构建 Apple Silicon 版本，并发布 `Lunera.dmg`、SHA-256 文件和 Sparkle `appcast.xml`。CI 只接受与 `project.yml` 中 `MARKETING_VERSION` 一致的正式版本标签。
+GitHub Actions 仅在推送 `vX.Y.Z` 版本标签时运行检查并构建 Apple Silicon 版本，随后发布 `Lunera.dmg`、SHA-256 文件和 Sparkle `appcast.xml`；分支推送和 Pull Request 不会自动触发构建。CI 只接受与 `project.yml` 中 `MARKETING_VERSION` 一致的正式版本标签。
 
 更新清单地址是 `https://github.com/csyasin/lunera/releases/latest/download/appcast.xml`，因此该仓库的 Release 资产必须允许未登录用户读取。CI 检查仓库为公开状态后才会发布；如需要保持源码私有，应先配置独立的公开发布源，并同步调整应用和发布脚本。发布包使用独立的 Sparkle EdDSA 密钥；它与 Apple 的代码签名和公证是不同机制。
 
