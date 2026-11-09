@@ -1,0 +1,113 @@
+name: Build and Release
+
+on:
+  push:
+    branches: ['**']
+    tags: ['v*']
+  pull_request:
+
+concurrency:
+  group: build-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: macos-26
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install XcodeGen
+        run: command -v xcodegen || brew install xcodegen
+      - name: Generate Xcode project
+        run: xcodegen generate
+      - name: Check calendar and layout
+        run: |
+          ./Scripts/test-calendar.sh
+          ./Scripts/test-layout.sh
+          python3 -B -m unittest discover -s Tests/ReleaseScripts
+      - name: Build development configuration
+        run: |
+          xcodebuild -resolvePackageDependencies -project Lunera.xcodeproj -scheme Lunera -derivedDataPath build
+          xcodebuild -project Lunera.xcodeproj -scheme Lunera -configuration Release -derivedDataPath build LUNERA_UPDATES_ENABLED=NO build
+          codesign --verify --deep --strict build/Build/Products/Release/Lunera.app
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: macos-26
+    timeout-minutes: 45
+    permissions:
+      contents: write
+    steps:
+      - name: Check out release tag
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Validate tag, source version, and repository
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SPARKLE_PUBLIC_KEY: ${{ vars.LUNERA_SPARKLE_PUBLIC_KEY }}
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+        run: |
+          if [[ ! "$GITHUB_REF_NAME" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
+            echo 'Release tags must use vX.Y.Z format.' >&2; exit 1
+          fi
+          if [[ "$GITHUB_REPOSITORY" != 'csyasin/lunera' ]]; then
+            echo 'Configure the application feed and release scripts before publishing from another repository.' >&2; exit 1
+          fi
+          if [[ "$(gh api "repos/$GITHUB_REPOSITORY" --jq .visibility)" != public ]]; then
+            echo 'GitHub release assets must be public for unauthenticated Sparkle updates.' >&2; exit 1
+          fi
+          SOURCE_VERSION="$(python3 -c 'import pathlib,re; s=pathlib.Path("project.yml").read_text(); m=re.findall(r"^\s*MARKETING_VERSION:\s*[\x27\x22]?([0-9]+\.[0-9]+\.[0-9]+)[\x27\x22]?\s*$",s,re.M); assert len(m)==1; print(m[0])')"
+          if [[ "$SOURCE_VERSION" != "${GITHUB_REF_NAME#v}" ]]; then
+            echo 'Tag and MARKETING_VERSION differ; use Scripts/release.py to prepare a release.' >&2; exit 1
+          fi
+          if [[ -z "$SPARKLE_PRIVATE_KEY" || -z "$SPARKLE_PUBLIC_KEY" ]]; then
+            echo 'Configure SPARKLE_PRIVATE_KEY and LUNERA_SPARKLE_PUBLIC_KEY before publishing.' >&2; exit 1
+          fi
+          python3 -c 'import base64,os; assert len(base64.b64decode(os.environ["SPARKLE_PUBLIC_KEY"], validate=True)) == 32'
+          if [[ "$(uname -m)" != arm64 ]]; then
+            echo 'This release requires an Apple Silicon runner.' >&2; exit 1
+          fi
+          echo "APP_VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+          echo "APP_BUILD_NUMBER=$GITHUB_RUN_NUMBER.$GITHUB_RUN_ATTEMPT" >> "$GITHUB_ENV"
+      - name: Install XcodeGen and resolve packages
+        run: |
+          command -v xcodegen || brew install xcodegen
+          xcodegen generate
+          xcodebuild -resolvePackageDependencies -project Lunera.xcodeproj -scheme Lunera -derivedDataPath build
+      - name: Build release with update verification enabled
+        env:
+          SPARKLE_PUBLIC_KEY: ${{ vars.LUNERA_SPARKLE_PUBLIC_KEY }}
+        run: |
+          xcodebuild -project Lunera.xcodeproj -scheme Lunera -configuration Release -derivedDataPath build \
+            ARCHS=arm64 MARKETING_VERSION="$APP_VERSION" CURRENT_PROJECT_VERSION="$APP_BUILD_NUMBER" \
+            CODE_SIGN_INJECT_BASE_ENTITLEMENTS=NO \
+            LUNERA_UPDATES_ENABLED=YES LUNERA_SPARKLE_PUBLIC_KEY="$SPARKLE_PUBLIC_KEY" build
+          mkdir -p dist
+          ditto build/Build/Products/Release/Lunera.app dist/Lunera.app
+      - name: Verify application and updater configuration
+        env:
+          SPARKLE_PUBLIC_KEY: ${{ vars.LUNERA_SPARKLE_PUBLIC_KEY }}
+        run: |
+          codesign --verify --deep --strict dist/Lunera.app
+          xcrun lipo dist/Lunera.app/Contents/MacOS/Lunera -verify_arch arm64
+          test -d dist/Lunera.app/Contents/Frameworks/Sparkle.framework/Versions/B/XPCServices/Installer.xpc
+          python3 Scripts/verify-release.py
+      - name: Package DMG
+        run: ./Scripts/package-dmg.sh
+      - name: Generate and verify signed update feed
+        env:
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+        run: ./Scripts/generate-appcast.py "$GITHUB_REF_NAME"
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: ./Scripts/publish-release.sh "$GITHUB_REF_NAME"

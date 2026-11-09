@@ -1,0 +1,82 @@
+name: Lunera
+options:
+  bundleIdPrefix: com.yasin
+  deploymentTarget:
+    macOS: '14.0'
+  xcodeVersion: '16.0'
+settings:
+  base:
+    SWIFT_VERSION: '6.0'
+    MACOSX_DEPLOYMENT_TARGET: '14.0'
+    ENABLE_HARDENED_RUNTIME: YES
+    CODE_SIGN_STYLE: Manual
+    CODE_SIGN_IDENTITY: '-'
+    CODE_SIGN_INJECT_BASE_ENTITLEMENTS: NO
+    DEVELOPMENT_TEAM: ''
+    LUNERA_UPDATES_ENABLED: 'NO'
+    LUNERA_SPARKLE_PUBLIC_KEY: ''
+packages:
+  Sparkle:
+    url: https://github.com/sparkle-project/Sparkle
+    exactVersion: 2.10.0
+targets:
+  Lunera:
+    type: application
+    platform: macOS
+    sources:
+      - path: Sources/Lunera
+    dependencies:
+      - package: Sparkle
+    info:
+      path: Sources/Info.plist
+      properties:
+        CFBundleDisplayName: Lunera
+        CFBundleShortVersionString: '$(MARKETING_VERSION)'
+        CFBundleVersion: '$(CURRENT_PROJECT_VERSION)'
+        LSUIElement: true
+        LuneraUpdatesEnabled: '$(LUNERA_UPDATES_ENABLED)'
+        SUFeedURL: https://github.com/csyasin/lunera/releases/latest/download/appcast.xml
+        SUPublicEDKey: '$(LUNERA_SPARKLE_PUBLIC_KEY)'
+        SUEnableInstallerLauncherService: true
+        SURequireSignedFeed: true
+        SUVerifyUpdateBeforeExtraction: true
+        SUAllowsAutomaticUpdates: false
+        SUAutomaticallyUpdate: false
+        SUEnableAutomaticChecks: true
+        SUEnableSystemProfiling: false
+        NSCalendarsFullAccessUsageDescription: Lunera 需要读取系统日历，以便在月历中显示日程和事件标记。Lunera 不会修改您的日历。
+        NSCalendarsUsageDescription: Lunera 需要读取系统日历，以便在月历中显示日程和事件标记。
+        NSHumanReadableCopyright: Copyright © 2026 Lunera.
+    entitlements:
+      path: Sources/Lunera.entitlements
+      properties:
+        com.apple.security.app-sandbox: true
+        # Ad-hoc builds have no Team ID, so hardened runtime cannot validate
+        # Sparkle's embedded library by team. Keep the rest of the runtime enabled.
+        com.apple.security.cs.disable-library-validation: true
+        com.apple.security.network.client: true
+        com.apple.security.personal-information.calendars: true
+        com.apple.security.temporary-exception.mach-lookup.global-name:
+          - '$(PRODUCT_BUNDLE_IDENTIFIER)-spks'
+          - '$(PRODUCT_BUNDLE_IDENTIFIER)-spki'
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.yasin.lunera
+        PRODUCT_NAME: Lunera
+        MARKETING_VERSION: '1.0.0'
+        CURRENT_PROJECT_VERSION: '1'
+        GENERATE_INFOPLIST_FILE: NO
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ENABLE_PREVIEWS: YES
+    scheme:
+      gatherCoverageData: false
+      environmentVariables: {}
+schemes:
+  Lunera:
+    build:
+      targets:
+        Lunera: all
+    run:
+      config: Debug
+    archive:
+      config: Release

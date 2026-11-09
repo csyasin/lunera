@@ -1,0 +1,412 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		395B63DF2A80660B8CE99B35 /* CalendarPanelLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD4E4452E85EDA425F951C9F /* CalendarPanelLayout.swift */; };
+		4FAA157198203A5ECCD8C9BD /* CalendarStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83A8E7F5EFF28F8E5BDDF947 /* CalendarStore.swift */; };
+		698BD826CE11DFE44D4895A8 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 98686C744DC705924837625A /* Sparkle */; };
+		6C77B84BBAE53E6CB3E62106 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AD070653EC2E8A2F6F5C003D /* Assets.xcassets */; };
+		7217470DF18E8E3C411D698A /* ThemeColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90BEA5847BABED795BBB25DB /* ThemeColor.swift */; };
+		8FD4721222280ADF2592483E /* NotchPanelController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D345924D4B1DCCEBCB68CF36 /* NotchPanelController.swift */; };
+		A0C54099F879076ED0CE6AEB /* AppUpdater.swift in Sources */ = {isa = PBXBuildFile; fileRef = E51B3269A8B0CCE87D1CFF13 /* AppUpdater.swift */; };
+		DC7494CA890479061AF423B5 /* CalendarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B4AA653F532716BA18186D8 /* CalendarView.swift */; };
+		F83360D063726A809808C77D /* PreferencesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9A7E15701641CB5050AC42F /* PreferencesView.swift */; };
+		FA531DB1F3ABEB48A6C83ABD /* LuneraApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FEE96934E068905BA72F989 /* LuneraApp.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		2FEE96934E068905BA72F989 /* LuneraApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LuneraApp.swift; sourceTree = "<group>"; };
+		4F1A4E7C9AFC197EA33CAF1F /* Lunera.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Lunera.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		5B4AA653F532716BA18186D8 /* CalendarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarView.swift; sourceTree = "<group>"; };
+		83A8E7F5EFF28F8E5BDDF947 /* CalendarStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarStore.swift; sourceTree = "<group>"; };
+		90BEA5847BABED795BBB25DB /* ThemeColor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeColor.swift; sourceTree = "<group>"; };
+		AD070653EC2E8A2F6F5C003D /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		D345924D4B1DCCEBCB68CF36 /* NotchPanelController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotchPanelController.swift; sourceTree = "<group>"; };
+		D9A7E15701641CB5050AC42F /* PreferencesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesView.swift; sourceTree = "<group>"; };
+		DD4E4452E85EDA425F951C9F /* CalendarPanelLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarPanelLayout.swift; sourceTree = "<group>"; };
+		E51B3269A8B0CCE87D1CFF13 /* AppUpdater.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppUpdater.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		EC07F606F20F9873D485ED51 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				698BD826CE11DFE44D4895A8 /* Sparkle in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		1A354F5821AED9313242E74B /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				4F1A4E7C9AFC197EA33CAF1F /* Lunera.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		34312B532E2C0BA3D44C0C86 /* UI */ = {
+			isa = PBXGroup;
+			children = (
+				DD4E4452E85EDA425F951C9F /* CalendarPanelLayout.swift */,
+				5B4AA653F532716BA18186D8 /* CalendarView.swift */,
+				D9A7E15701641CB5050AC42F /* PreferencesView.swift */,
+				90BEA5847BABED795BBB25DB /* ThemeColor.swift */,
+			);
+			path = UI;
+			sourceTree = "<group>";
+		};
+		5D916911603654066A5E7707 = {
+			isa = PBXGroup;
+			children = (
+				818A978C3D1F136084DC40B2 /* Lunera */,
+				1A354F5821AED9313242E74B /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		818A978C3D1F136084DC40B2 /* Lunera */ = {
+			isa = PBXGroup;
+			children = (
+				E51B3269A8B0CCE87D1CFF13 /* AppUpdater.swift */,
+				AD070653EC2E8A2F6F5C003D /* Assets.xcassets */,
+				2FEE96934E068905BA72F989 /* LuneraApp.swift */,
+				932AF38380471C1D842745C3 /* Calendar */,
+				A16B7D9CD17A46EA12EA6BFE /* Panel */,
+				34312B532E2C0BA3D44C0C86 /* UI */,
+			);
+			name = Lunera;
+			path = Sources/Lunera;
+			sourceTree = "<group>";
+		};
+		932AF38380471C1D842745C3 /* Calendar */ = {
+			isa = PBXGroup;
+			children = (
+				83A8E7F5EFF28F8E5BDDF947 /* CalendarStore.swift */,
+			);
+			path = Calendar;
+			sourceTree = "<group>";
+		};
+		A16B7D9CD17A46EA12EA6BFE /* Panel */ = {
+			isa = PBXGroup;
+			children = (
+				D345924D4B1DCCEBCB68CF36 /* NotchPanelController.swift */,
+			);
+			path = Panel;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		7CFB1711D8900F1A87F87D31 /* Lunera */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 430506B4115F9782C82B939D /* Build configuration list for PBXNativeTarget "Lunera" */;
+			buildPhases = (
+				9479B21E4F278F3DE88469F7 /* Sources */,
+				4D04A12978641B53E6E6C1BF /* Resources */,
+				EC07F606F20F9873D485ED51 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Lunera;
+			packageProductDependencies = (
+				98686C744DC705924837625A /* Sparkle */,
+			);
+			productName = Lunera;
+			productReference = 4F1A4E7C9AFC197EA33CAF1F /* Lunera.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		26D8B0DE488D4598AAAF9AAF /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1600;
+				TargetAttributes = {
+					7CFB1711D8900F1A87F87D31 = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Manual;
+					};
+				};
+			};
+			buildConfigurationList = CA098A70F23EF338B594B724 /* Build configuration list for PBXProject "Lunera" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 5D916911603654066A5E7707;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				6F0F27C0BD6D0823D095C2BF /* XCRemoteSwiftPackageReference "Sparkle" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 1A354F5821AED9313242E74B /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				7CFB1711D8900F1A87F87D31 /* Lunera */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		4D04A12978641B53E6E6C1BF /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6C77B84BBAE53E6CB3E62106 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		9479B21E4F278F3DE88469F7 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A0C54099F879076ED0CE6AEB /* AppUpdater.swift in Sources */,
+				395B63DF2A80660B8CE99B35 /* CalendarPanelLayout.swift in Sources */,
+				4FAA157198203A5ECCD8C9BD /* CalendarStore.swift in Sources */,
+				DC7494CA890479061AF423B5 /* CalendarView.swift in Sources */,
+				FA531DB1F3ABEB48A6C83ABD /* LuneraApp.swift in Sources */,
+				8FD4721222280ADF2592483E /* NotchPanelController.swift in Sources */,
+				F83360D063726A809808C77D /* PreferencesView.swift in Sources */,
+				7217470DF18E8E3C411D698A /* ThemeColor.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		4DCCDD8B588AF91CF8B1B947 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Sources/Lunera.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Sources/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.yasin.lunera;
+				PRODUCT_NAME = Lunera;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		9F296381B4587528C94198EA /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
+				CODE_SIGN_STYLE = Manual;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = "";
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LUNERA_SPARKLE_PUBLIC_KEY = "";
+				LUNERA_UPDATES_ENABLED = NO;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		D0CA24414F381E54DE12B9AF /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
+				CODE_SIGN_STYLE = Manual;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LUNERA_SPARKLE_PUBLIC_KEY = "";
+				LUNERA_UPDATES_ENABLED = NO;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		E598D9DFE008F163E86E4514 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Sources/Lunera.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Sources/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.yasin.lunera;
+				PRODUCT_NAME = Lunera;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		430506B4115F9782C82B939D /* Build configuration list for PBXNativeTarget "Lunera" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4DCCDD8B588AF91CF8B1B947 /* Debug */,
+				E598D9DFE008F163E86E4514 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		CA098A70F23EF338B594B724 /* Build configuration list for PBXProject "Lunera" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D0CA24414F381E54DE12B9AF /* Debug */,
+				9F296381B4587528C94198EA /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		6F0F27C0BD6D0823D095C2BF /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle";
+			requirement = {
+				kind = exactVersion;
+				version = 2.10.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		98686C744DC705924837625A /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 6F0F27C0BD6D0823D095C2BF /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 26D8B0DE488D4598AAAF9AAF /* Project object */;
+}
