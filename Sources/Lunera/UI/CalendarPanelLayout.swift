@@ -2,7 +2,13 @@ import Foundation
 
 /// Shared dimensions keep the native window and SwiftUI content in agreement.
 struct CalendarPanelLayout {
-    static let bottomPadding: CGFloat = 28
+    // The agenda sits equally far from the panel's side and bottom edges.
+    static let bottomPadding: CGFloat = 16
+    static let contentHorizontalPadding: CGFloat = 38
+    static let panelTopCornerRadius: CGFloat = 12
+    static let eventGroupCornerRadius: CGFloat = 10
+    static let agendaHorizontalOutset = contentHorizontalPadding - panelTopCornerRadius - bottomPadding
+    static let panelBottomCornerRadius = eventGroupCornerRadius + bottomPadding
     static let weekdayTopSpacing: CGFloat = 14
     static let weekdayHeight: CGFloat = 18
     static let gridTopSpacing: CGFloat = 7

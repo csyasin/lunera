@@ -3,6 +3,11 @@ import Foundation
 @main
 struct LayoutCheck {
     static func main() {
+        let sideInset = CalendarPanelLayout.contentHorizontalPadding
+            - CalendarPanelLayout.agendaHorizontalOutset - CalendarPanelLayout.panelTopCornerRadius
+        precondition(sideInset == CalendarPanelLayout.bottomPadding)
+        precondition(CalendarPanelLayout.panelBottomCornerRadius
+                     == CalendarPanelLayout.eventGroupCornerRadius + CalendarPanelLayout.bottomPadding)
         func layout(access: Bool = true, allDay: Int = 0, timed: Int = 0,
                     weeks: Int = 5, maximum: CGFloat = 900) -> CalendarPanelLayout {
             CalendarPanelLayout(weekCount: weeks, headerHeight: 38,

@@ -47,34 +47,37 @@ struct PreferencesView: View {
     }
 
     private var launchAtLoginSection: some View {
-        HStack(spacing: 14) {
-            rowIcon("power")
-            VStack(alignment: .leading, spacing: 4) {
-                Text("开机自启").font(.system(size: 13, weight: .medium))
-                Text(launchAtLogin.description)
-                    .font(.system(size: 11)).foregroundStyle(.secondary)
-            }
-            Spacer()
-            if launchAtLogin.requiresApproval {
-                Button("打开系统设置") { launchAtLogin.openSystemSettings() }
-                    .controlSize(.small)
-            }
-            Toggle("开机自启", isOn: Binding(
-                get: { launchAtLogin.isOn },
-                set: { enabled in
-                    do { try launchAtLogin.setEnabled(enabled) }
-                    catch { launchAtLogin.errorMessage = error.localizedDescription }
+        VStack(alignment: .leading, spacing: 12) {
+            sectionTitle("开机自启")
+            HStack(spacing: 14) {
+                rowIcon("power")
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("开机自启").font(.system(size: 13, weight: .medium))
+                    Text(launchAtLogin.description)
+                        .font(.system(size: 11)).foregroundStyle(.secondary)
                 }
-            ))
-            .labelsHidden().toggleStyle(.switch).tint(accent)
-            .accessibilityLabel("开机自启")
+                Spacer()
+                if launchAtLogin.requiresApproval {
+                    Button("打开系统设置") { launchAtLogin.openSystemSettings() }
+                        .controlSize(.small)
+                }
+                Toggle("开机自启", isOn: Binding(
+                    get: { launchAtLogin.isOn },
+                    set: { enabled in
+                        do { try launchAtLogin.setEnabled(enabled) }
+                        catch { launchAtLogin.errorMessage = error.localizedDescription }
+                    }
+                ))
+                .labelsHidden().toggleStyle(.switch).tint(accent)
+                .accessibilityLabel("开机自启")
+            }
+            .padding(18)
+            .background(.quaternary.opacity(0.4), in: RoundedRectangle(cornerRadius: 18))
         }
-        .padding(18)
-        .background(.quaternary.opacity(0.4), in: RoundedRectangle(cornerRadius: 18))
     }
 
     private var themeSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 12) {
             sectionTitle("主题色")
             HStack(spacing: 12) {
                 ForEach(ThemeColor.presets, id: \.hex) { preset in
@@ -133,6 +136,8 @@ struct PreferencesView: View {
                 }
                 Spacer(minLength: 0)
             }
+            .padding(18)
+            .background(.quaternary.opacity(0.4), in: RoundedRectangle(cornerRadius: 18))
         }
     }
 

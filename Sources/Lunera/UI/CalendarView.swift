@@ -31,10 +31,11 @@ struct CalendarView: View {
                 .padding(.top, CalendarPanelLayout.gridTopSpacing)
             if store.authorization == .authorized {
                 agenda(events: events, layout: layout)
+                    .padding(.horizontal, -CalendarPanelLayout.agendaHorizontalOutset)
                     .padding(.top, CalendarPanelLayout.agendaTopSpacing)
             }
         }
-        .padding(.horizontal, 38)
+        .padding(.horizontal, CalendarPanelLayout.contentHorizontalPadding)
         .padding(.bottom, CalendarPanelLayout.bottomPadding)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .foregroundStyle(.white)
@@ -155,6 +156,13 @@ struct CalendarView: View {
                 emptyAgenda
                     .frame(maxWidth: .infinity)
                     .frame(height: layout.agendaContentHeight)
+                    .overlay {
+                        RoundedRectangle(cornerRadius: CalendarPanelLayout.eventGroupCornerRadius, style: .continuous)
+                            .strokeBorder(Color.white.opacity(0.22),
+                                          style: StrokeStyle(lineWidth: 1, dash: [4, 4]))
+                            .allowsHitTesting(false)
+                            .accessibilityHidden(true)
+                    }
                     .clipped()
             } else {
                 ScrollView {
@@ -227,9 +235,9 @@ struct CalendarView: View {
             }
         }
         .background(Color(red: 0.105, green: 0.11, blue: 0.13),
-                    in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    in: RoundedRectangle(cornerRadius: CalendarPanelLayout.eventGroupCornerRadius, style: .continuous))
         .overlay {
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
+            RoundedRectangle(cornerRadius: CalendarPanelLayout.eventGroupCornerRadius, style: .continuous)
                 .strokeBorder(Color.white.opacity(0.08), lineWidth: 0.75)
                 .allowsHitTesting(false)
         }

@@ -144,7 +144,7 @@ final class NotchPanelController: NSObject {
             let menu = NSMenu()
             menu.addItem(withTitle: isPresented ? "Hide Lunera" : "Open Lunera", action: #selector(toggleFromMenu), keyEquivalent: "")
             menu.addItem(.separator())
-            menu.addItem(withTitle: "偏好设置…", action: #selector(openPreferences), keyEquivalent: ",")
+            menu.addItem(withTitle: "Settings…", action: #selector(openPreferences), keyEquivalent: ",")
             menu.addItem(.separator())
             menu.addItem(withTitle: "Quit Lunera", action: #selector(quit), keyEquivalent: "q")
             menu.items.forEach { $0.target = self }
@@ -279,6 +279,10 @@ final class NotchPanelController: NSObject {
             }
             let modifiers = event.modifierFlags.intersection([.command, .control, .option, .shift])
             let editingText = (self.panel.firstResponder as? NSTextView)?.isFieldEditor == true
+            if modifiers == .command, event.charactersIgnoringModifiers == ",", !editingText {
+                if !event.isARepeat { self.onPreferences() }
+                return nil
+            }
             if event.keyCode == 49, modifiers.isEmpty, !editingText {
                 if !event.isARepeat { self.onGoToToday() }
                 return nil
@@ -449,8 +453,8 @@ private final class NotchSurfaceView: NSView {
         let right = left + size.width
         let top: CGFloat = 0
         let bottom = top - size.height
-        let topRadius = min(12, size.width / 4, size.height / 4)
-        let bottomRadius = min(40, (size.width - 2 * topRadius) / 2, size.height / 3)
+        let topRadius = min(CalendarPanelLayout.panelTopCornerRadius, size.width / 4, size.height / 4)
+        let bottomRadius = min(CalendarPanelLayout.panelBottomCornerRadius, (size.width - 2 * topRadius) / 2, size.height / 3)
         let k: CGFloat = 0.5522847498
         let path = CGMutablePath()
         path.move(to: CGPoint(x: left, y: top))
