@@ -198,17 +198,30 @@ struct CalendarView: View {
     private var emptyAgendaIcon: some View {
         ZStack {
             Circle()
-                .fill(accent.opacity(0.18))
-                .frame(width: 38, height: 38)
-            Image(systemName: "calendar")
-                .font(.system(size: 19, weight: .regular))
-                .foregroundStyle(accent)
-            Image(systemName: "sparkle")
-                .font(.system(size: 10, weight: .medium))
-                .foregroundStyle(accent)
-                .offset(x: 15, y: -14)
+                .fill(accent.opacity(0.08))
+                .frame(width: 37, height: 37)
+            Circle()
+                .strokeBorder(accent.opacity(0.2), lineWidth: 0.8)
+                .frame(width: 37, height: 37)
+            Ellipse()
+                .stroke(accent.opacity(0.35), lineWidth: 0.9)
+                .frame(width: 54, height: 22)
+                .rotationEffect(.degrees(-25))
+            EmptyAgendaMoon()
+                .fill(LinearGradient(colors: [accent, accent.opacity(0.68)],
+                                     startPoint: .topLeading, endPoint: .bottomTrailing))
+                .frame(width: 22, height: 28)
+                .offset(x: -2)
+            EmptyAgendaStar()
+                .fill(accent)
+                .frame(width: 8, height: 8)
+                .offset(x: 21, y: -16)
+            Circle()
+                .fill(accent.opacity(0.65))
+                .frame(width: 3, height: 3)
+                .offset(x: -21, y: 14)
         }
-        .frame(width: 46, height: 42)
+        .frame(width: 60, height: 50)
         .accessibilityHidden(true)
     }
 
@@ -314,5 +327,42 @@ struct CalendarView: View {
             return time(event.endDate)
         }
         return event.endDate.formatted(.dateTime.month(.defaultDigits).day()) + " " + time(event.endDate)
+    }
+}
+
+/// A crescent and a tiny four-point star, drawn specifically for Lunera's empty state.
+private struct EmptyAgendaMoon: Shape {
+    func path(in rect: CGRect) -> Path {
+        let w = rect.width, h = rect.height
+        var path = Path()
+        path.move(to: CGPoint(x: w * 0.79, y: h * 0.03))
+        path.addCurve(to: CGPoint(x: w * 0.14, y: h * 0.5),
+                      control1: CGPoint(x: w * 0.37, y: -h * 0.03),
+                      control2: CGPoint(x: w * 0.14, y: h * 0.2))
+        path.addCurve(to: CGPoint(x: w * 0.83, y: h * 0.97),
+                      control1: CGPoint(x: w * 0.14, y: h * 0.81),
+                      control2: CGPoint(x: w * 0.39, y: h * 1.04))
+        path.addCurve(to: CGPoint(x: w * 0.44, y: h * 0.5),
+                      control1: CGPoint(x: w * 0.6, y: h * 0.9),
+                      control2: CGPoint(x: w * 0.44, y: h * 0.73))
+        path.addCurve(to: CGPoint(x: w * 0.79, y: h * 0.03),
+                      control1: CGPoint(x: w * 0.44, y: h * 0.26),
+                      control2: CGPoint(x: w * 0.59, y: h * 0.08))
+        path.closeSubpath()
+        return path
+    }
+}
+
+private struct EmptyAgendaStar: Shape {
+    func path(in rect: CGRect) -> Path {
+        let w = rect.width, h = rect.height
+        var path = Path()
+        path.move(to: CGPoint(x: w * 0.5, y: 0))
+        path.addQuadCurve(to: CGPoint(x: w, y: h * 0.5), control: CGPoint(x: w * 0.5, y: h * 0.5))
+        path.addQuadCurve(to: CGPoint(x: w * 0.5, y: h), control: CGPoint(x: w * 0.5, y: h * 0.5))
+        path.addQuadCurve(to: CGPoint(x: 0, y: h * 0.5), control: CGPoint(x: w * 0.5, y: h * 0.5))
+        path.addQuadCurve(to: CGPoint(x: w * 0.5, y: 0), control: CGPoint(x: w * 0.5, y: h * 0.5))
+        path.closeSubpath()
+        return path
     }
 }

@@ -24,7 +24,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             content: CalendarView(store: calendarStore),
             store: calendarStore,
             onGoToToday: { [weak calendarStore] in calendarStore?.goToToday() },
-            onPreferences: { [weak self] in self?.showPreferences() }
+            onPreferences: { [weak self] in self?.showPreferences() },
+            canCheckForUpdates: { [weak self] in self?.updater.canCheckForUpdates ?? false },
+            onCheckForUpdates: { [weak self] in self?.updater.checkForUpdates() }
         )
         Task { [weak calendarStore] in
             await calendarStore?.requestCalendarAccessIfNeeded()

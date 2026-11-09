@@ -46,6 +46,8 @@ final class NotchPanelController: NSObject {
     private let panel: NotchPanel
     private let onGoToToday: () -> Void
     private let onPreferences: () -> Void
+    private let canCheckForUpdates: () -> Bool
+    private let onCheckForUpdates: () -> Void
     private let store: CalendarStore
     private var storeSubscription: AnyCancellable?
     private var activeScreen: NSScreen?
@@ -60,9 +62,13 @@ final class NotchPanelController: NSObject {
     private var sizeUpdateScheduled = false
 
     init<Content: View>(content: Content, store: CalendarStore, onGoToToday: @escaping () -> Void,
-                        onPreferences: @escaping () -> Void = {}) {
+                        onPreferences: @escaping () -> Void = {},
+                        canCheckForUpdates: @escaping () -> Bool = { false },
+                        onCheckForUpdates: @escaping () -> Void = {}) {
         self.store = store
         self.onPreferences = onPreferences
+        self.canCheckForUpdates = canCheckForUpdates
+        self.onCheckForUpdates = onCheckForUpdates
         let initialLayout = CalendarPanelLayout(
             weekCount: store.days.count / 7,
             headerHeight: NotchHeaderLayout.fallback.bandHeight,
@@ -142,9 +148,12 @@ final class NotchPanelController: NSObject {
     @objc private func statusItemClicked(_ sender: NSStatusBarButton) {
         if NSApp.currentEvent?.type == .rightMouseUp {
             let menu = NSMenu()
+            menu.autoenablesItems = false
             menu.addItem(withTitle: isPresented ? "Hide Lunera" : "Open Lunera", action: #selector(toggleFromMenu), keyEquivalent: "")
             menu.addItem(.separator())
             menu.addItem(withTitle: "Settings…", action: #selector(openPreferences), keyEquivalent: ",")
+            let checkUpdates = menu.addItem(withTitle: "Check for Updates…", action: #selector(checkForUpdatesFromMenu), keyEquivalent: "")
+            checkUpdates.isEnabled = canCheckForUpdates()
             menu.addItem(.separator())
             menu.addItem(withTitle: "Quit Lunera", action: #selector(quit), keyEquivalent: "q")
             menu.items.forEach { $0.target = self }
@@ -156,6 +165,11 @@ final class NotchPanelController: NSObject {
 
     @objc private func toggleFromMenu() { toggle() }
     @objc private func openPreferences() { onPreferences() }
+    @objc private func checkForUpdatesFromMenu() {
+        guard canCheckForUpdates() else { return }
+        hide(animated: false)
+        onCheckForUpdates()
+    }
     @objc private func quit() { NSApp.terminate(nil) }
 
     func toggle() {

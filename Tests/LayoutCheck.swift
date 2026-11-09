@@ -6,6 +6,7 @@ struct LayoutCheck {
         let sideInset = CalendarPanelLayout.contentHorizontalPadding
             - CalendarPanelLayout.agendaHorizontalOutset - CalendarPanelLayout.panelTopCornerRadius
         precondition(sideInset == CalendarPanelLayout.bottomPadding)
+        precondition(CalendarPanelLayout.eventGroupSpacing == sideInset)
         precondition(CalendarPanelLayout.panelBottomCornerRadius
                      == CalendarPanelLayout.eventGroupCornerRadius + CalendarPanelLayout.bottomPadding)
         func layout(access: Bool = true, allDay: Int = 0, timed: Int = 0,
@@ -23,6 +24,10 @@ struct LayoutCheck {
                      + CalendarPanelLayout.emptyAgendaHeight + CalendarPanelLayout.bottomPadding)
         precondition(empty.agendaContentHeight == CalendarPanelLayout.emptyAgendaHeight)
         precondition(!empty.agendaNeedsScrolling)
+        let constrainedEmpty = layout(maximum: empty.calendarHeight + CalendarPanelLayout.bottomPadding
+                                      + CalendarPanelLayout.agendaTopSpacing + 45)
+        precondition(constrainedEmpty.agendaContentHeight == 45)
+        precondition(constrainedEmpty.height == constrainedEmpty.maximumHeight)
         let oneAllDay = layout(allDay: 1)
         let twoAllDay = layout(allDay: 2)
         let oneTimed = layout(timed: 1)

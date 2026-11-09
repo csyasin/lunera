@@ -51,11 +51,8 @@ struct PreferencesView: View {
             sectionTitle("开机自启")
             HStack(spacing: 14) {
                 rowIcon("power")
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("开机自启").font(.system(size: 13, weight: .medium))
-                    Text(launchAtLogin.description)
-                        .font(.system(size: 11)).foregroundStyle(.secondary)
-                }
+                Text(launchAtLogin.description)
+                    .font(.system(size: 11)).foregroundStyle(.secondary)
                 Spacer()
                 if launchAtLogin.requiresApproval {
                     Button("打开系统设置") { launchAtLogin.openSystemSettings() }
