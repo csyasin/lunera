@@ -23,7 +23,7 @@
 
 ## 构建、发布和应用内更新
 
-GitHub Actions 在分支推送和 Pull Request 时构建、检查日历及布局；`vX.Y.Z` 标签通过检查后额外构建 Apple Silicon 版本，并发布 `Lunera.dmg`、SHA-256 文件和 Sparkle `appcast.xml`。CI 只接受与 `project.yml` 中 `MARKETING_VERSION` 一致的正式版本标签。源码仓库当前没有自动发版记录；配置和测试通过前不要把此流程视为已验证的线上发布。
+GitHub Actions 在分支推送和 Pull Request 时构建、检查日历及布局；`vX.Y.Z` 标签通过检查后额外构建 Apple Silicon 版本，并发布 `Lunera.dmg`、SHA-256 文件和 Sparkle `appcast.xml`。CI 只接受与 `project.yml` 中 `MARKETING_VERSION` 一致的正式版本标签。
 
 更新清单地址是 `https://github.com/csyasin/lunera/releases/latest/download/appcast.xml`，因此该仓库的 Release 资产必须允许未登录用户读取。CI 检查仓库为公开状态后才会发布；如需要保持源码私有，应先配置独立的公开发布源，并同步调整应用和发布脚本。发布包使用独立的 Sparkle EdDSA 密钥；它与 Apple 的代码签名和公证是不同机制。
 
@@ -37,6 +37,6 @@ xcodebuild -resolvePackageDependencies -project Lunera.xcodeproj -scheme Lunera 
 
 脚本使用 `dev.yasin.lunera` 钥匙串账号生成专用于 Lunera 的私钥，将公钥写入 GitHub Actions 变量 `LUNERA_SPARKLE_PUBLIC_KEY`，将私钥通过标准输入写入 Secret `SPARKLE_PRIVATE_KEY`；临时导出的私钥文件会删除。已有线上密钥时，必须在钥匙串恢复**原有**私钥后运行 `./Scripts/setup-updates.py --github`，不要使用 `--create` 重新生成；脚本会拒绝替换不匹配的已配置公钥。请妥善备份原始密钥，丢失后已安装的版本无法验证新密钥签名的更新。
 
-完成配置、检查并提交源码后，可以用 `./Scripts/release.py patch --dry-run` 预览，或将 `patch` 换为 `minor`、`major`、`current` 或指定版本号。去掉 `--dry-run` 会修改版本、创建提交和标签，并将分支与标签原子推送到 `origin`，随后触发发布。工具要求工作区干净、检查远端分支与已有标签；它不会包含尚未提交的应用修改。CI 会在签名前将版本、公钥、feed 和启用标记写入应用，再检查签名、沙盒和 Sparkle XPC，验证 DMG 哈希以及更新包与更新清单签名；任何一步失败都不会发布。自动发布及应用内安装仍需在真实 GitHub 仓库、密钥和 macOS 环境完成端到端验证。
+完成配置、检查并提交源码后，可以用 `./Scripts/release.py patch --dry-run` 预览，或将 `patch` 换为 `minor`、`major`、`current` 或指定版本号。去掉 `--dry-run` 会修改版本、创建提交和标签，并将分支与标签原子推送到 `origin`，随后触发发布。工具要求工作区干净、检查远端分支与已有标签；它不会包含尚未提交的应用修改。CI 会在签名前将版本、公钥、feed 和启用标记写入应用，再检查签名、沙盒和 Sparkle XPC，验证 DMG 哈希以及更新包与更新清单签名；任何一步失败都不会发布。应用内跨版本安装仍需通过实际后续版本验证。
 
 本地开发构建默认关闭应用内更新；应首次手动安装包含更新功能的正式版，之后才能通过 Sparkle 检查后续版本。更新公钥放在 Actions 变量中，不含私钥。发行时的私钥从 Secret 传入签名工具的标准输入，不写入命令参数或发布产物。
