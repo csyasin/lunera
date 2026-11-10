@@ -8,6 +8,7 @@ struct NotchHeaderLayout: Sendable {
     var reservedWidth: CGFloat
     var bandHeight: CGFloat
     var maximumPanelHeight: CGFloat
+    var notchSize: CGSize = .zero
 
     static let fallback = NotchHeaderLayout(reservedWidth: 180, bandHeight: 32, maximumPanelHeight: 900)
 
@@ -15,11 +16,14 @@ struct NotchHeaderLayout: Sendable {
     static func on(_ screen: NSScreen, panelWidth: CGFloat) -> NotchHeaderLayout {
         let maximumHeight = max(1, screen.frame.maxY - max(screen.frame.minY, screen.visibleFrame.minY) - 16)
         if screen.safeAreaInsets.top > 0,
-           let left = screen.auxiliaryTopLeftArea, let right = screen.auxiliaryTopRightArea {
+           let left = screen.auxiliaryTopLeftArea, let right = screen.auxiliaryTopRightArea,
+           right.minX > left.maxX {
+            let notchSize = CGSize(width: right.minX - left.maxX, height: screen.safeAreaInsets.top)
             return NotchHeaderLayout(
-                reservedWidth: min(panelWidth, max(0, right.minX - left.maxX) + 24),
+                reservedWidth: min(panelWidth, notchSize.width + 24),
                 bandHeight: max(32, screen.safeAreaInsets.top),
-                maximumPanelHeight: maximumHeight
+                maximumPanelHeight: maximumHeight,
+                notchSize: notchSize
             )
         }
         return NotchHeaderLayout(reservedWidth: 0, bandHeight: 36, maximumPanelHeight: maximumHeight)
@@ -63,6 +67,11 @@ final class NotchPanelController: NSObject {
     private var localMouseMonitor: Any?
     private var globalMouseMonitor: Any?
     private var keyMonitor: Any?
+    private var scrollMonitor: Any?
+    private var monthScrollDistance: CGFloat = 0
+    private var monthScrollTravel = CGPoint.zero
+    private var monthScrollAxis: NSUserInterfaceLayoutOrientation?
+    private var monthScrollDidNavigate = false
     private var screenObserver: NSObjectProtocol?
     private var spaceObserver: NSObjectProtocol?
     private var isPresented = false
@@ -93,7 +102,7 @@ final class NotchPanelController: NSObject {
             button.image = Self.statusBarImage()
             button.imagePosition = .imageOnly
             button.setAccessibilityLabel("Lunera")
-            button.toolTip = "Lunera — click to open, Space for today, right-click for options"
+            button.toolTip = "Lunera — click to toggle, Space for today, right-click for options"
             button.target = self
             button.action = #selector(statusItemClicked(_:))
             button.sendAction(on: [.leftMouseUp, .rightMouseUp])
@@ -211,7 +220,8 @@ final class NotchPanelController: NSObject {
             panel.orderOut(nil)
             return
         }
-        panel.surface.morph(to: panel.surface.collapsedSize, motion: .close) { [weak self] in
+        // Merge into the physical notch when present; otherwise shrink to nothing.
+        panel.surface.morph(to: panel.surface.closedSize, motion: .close) { [weak self] in
             guard let self, self.animationID == generation else { return }
             self.panel.orderOut(nil)
         }
@@ -231,7 +241,7 @@ final class NotchPanelController: NSObject {
         CATransaction.setDisableActions(true)
         panel.setFrame(canvas, display: false)
         panel.surface.place(canvas: canvas.size)
-        if !continuing { panel.surface.resetToNotch() }
+        if !continuing { panel.surface.resetToClosed() }
         CATransaction.commit()
         panel.surface.morph(to: target.size, motion: motion) { [weak self] in
             guard let self, self.animationID == generation, self.isPresented else { return }
@@ -280,18 +290,85 @@ final class NotchPanelController: NSObject {
         return NSScreen.screens.first { $0.frame.contains(point) }
     }
 
+    private func isOverStatusItem(_ point: NSPoint) -> Bool {
+        guard let button = statusItem.button, let window = button.window else { return false }
+        let buttonFrame = window.convertToScreen(button.convert(button.bounds, to: nil))
+        return buttonFrame.contains(point)
+    }
+
+    private func monthOffset(for event: NSEvent) -> Int? {
+        switch event.keyCode {
+        case 123, 126: return -1 // Left and up arrows.
+        case 124, 125: return 1 // Right and down arrows.
+        default:
+            switch event.charactersIgnoringModifiers?.lowercased() {
+            case "h", "k", "p": return -1
+            case "j", "l", "n": return 1
+            default: return nil
+            }
+        }
+    }
+
+    private func resetMonthScroll() {
+        monthScrollDistance = 0
+        monthScrollTravel = .zero
+        monthScrollAxis = nil
+        monthScrollDidNavigate = false
+    }
+
+    /// Claims horizontal gestures while leaving vertical agenda scrolling intact.
+    private func handleMonthScroll(_ event: NSEvent) -> Bool {
+        guard event.hasPreciseScrollingDeltas else { return false }
+        if event.phase.contains(.began) || event.phase.contains(.mayBegin) {
+            resetMonthScroll()
+        }
+        // Keep the axis lock through finger lift and inertia, but never page again.
+        if !event.momentumPhase.isEmpty { return monthScrollAxis == .horizontal }
+        guard !event.phase.isEmpty else { return false }
+        if event.phase.contains(.cancelled) {
+            let handled = monthScrollAxis == .horizontal
+            resetMonthScroll()
+            return handled
+        }
+        if event.phase.contains(.ended) { return monthScrollAxis == .horizontal }
+
+        // Undo natural scrolling so rightward fingers always mean previous month.
+        let dx = event.isDirectionInvertedFromDevice ? -event.scrollingDeltaX : event.scrollingDeltaX
+        monthScrollDistance += dx
+        monthScrollTravel.x += abs(dx)
+        monthScrollTravel.y += abs(event.scrollingDeltaY)
+        if monthScrollAxis == nil {
+            if monthScrollTravel.x >= 8, monthScrollTravel.x > monthScrollTravel.y * 1.4 {
+                monthScrollAxis = .horizontal
+            } else if monthScrollTravel.y >= 8, monthScrollTravel.y > monthScrollTravel.x * 1.4 {
+                monthScrollAxis = .vertical
+            }
+        }
+        guard monthScrollAxis == .horizontal else { return false }
+        if !monthScrollDidNavigate, abs(monthScrollDistance) >= 40 {
+            monthScrollDidNavigate = true
+            store.moveMonth(monthScrollDistance < 0 ? -1 : 1)
+        }
+        return true
+    }
+
     private func installEventMonitors() {
         removeEventMonitors()
         localMouseMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown, .otherMouseDown]) { [weak self] event in
             guard let self else { return event }
-            // Let the status button's own action perform the toggle, including right-click.
-            if event.window !== self.panel && event.window !== self.statusItem.button?.window {
+            // Menu-bar events can be delivered through another process, so window
+            // identity alone cannot identify a click on our status button.
+            if event.window !== self.panel && !self.isOverStatusItem(NSEvent.mouseLocation) {
                 self.hide()
             }
             return event
         }
         globalMouseMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown, .otherMouseDown]) { [weak self] _ in
-            Task { @MainActor in self?.hide() }
+            let point = NSEvent.mouseLocation
+            Task { @MainActor in
+                guard let self, !self.isOverStatusItem(point) else { return }
+                self.hide()
+            }
         }
         keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
             guard let self, self.isPresented, self.panel.isKeyWindow,
@@ -301,7 +378,7 @@ final class NotchPanelController: NSObject {
                 return nil
             }
             let modifiers = event.modifierFlags.intersection([.command, .control, .option, .shift])
-            let editingText = (self.panel.firstResponder as? NSTextView)?.isFieldEditor == true
+            let editingText = self.panel.firstResponder is NSTextView || self.panel.firstResponder is NSTextField
             if modifiers == .command, event.charactersIgnoringModifiers == ",", !editingText {
                 if !event.isARepeat { self.onPreferences() }
                 return nil
@@ -310,7 +387,16 @@ final class NotchPanelController: NSObject {
                 if !event.isARepeat { self.onGoToToday() }
                 return nil
             }
+            if modifiers.isEmpty, !editingText, let offset = self.monthOffset(for: event) {
+                self.store.moveMonth(offset)
+                return nil
+            }
             return event
+        }
+        scrollMonitor = NSEvent.addLocalMonitorForEvents(matching: .scrollWheel) { [weak self] event in
+            guard let self, self.isPresented, event.window === self.panel,
+                  event.modifierFlags.intersection([.command, .control, .option, .shift]).isEmpty else { return event }
+            return self.handleMonthScroll(event) ? nil : event
         }
     }
 
@@ -318,6 +404,8 @@ final class NotchPanelController: NSObject {
         if let localMouseMonitor { NSEvent.removeMonitor(localMouseMonitor); self.localMouseMonitor = nil }
         if let globalMouseMonitor { NSEvent.removeMonitor(globalMouseMonitor); self.globalMouseMonitor = nil }
         if let keyMonitor { NSEvent.removeMonitor(keyMonitor); self.keyMonitor = nil }
+        if let scrollMonitor { NSEvent.removeMonitor(scrollMonitor); self.scrollMonitor = nil }
+        resetMonthScroll()
     }
 }
 
@@ -377,7 +465,7 @@ private final class NotchSurfaceView: NSView {
     private let silhouette = CAShapeLayer()
     private let originalContent: AnyView
     private let host: NSHostingView<AnyView>
-    private(set) var collapsedSize = NSSize(width: 200, height: 24)
+    private(set) var closedSize: CGSize = .zero
     private var contentHeight = NotchHeaderLayout.fallback.maximumPanelHeight
     private var presentationID: UInt = 0
 
@@ -405,9 +493,9 @@ private final class NotchSurfaceView: NSView {
     func configure(for screen: NSScreen) {
         let header = NotchHeaderLayout.on(screen, panelWidth: NotchPanelController.panelWidth)
         contentHeight = header.maximumPanelHeight
-        collapsedSize = header.reservedWidth > 0
-            ? NSSize(width: max(160, header.reservedWidth), height: screen.safeAreaInsets.top)
-            : NSSize(width: 200, height: 24)
+        // Content clearance includes padding, but the animation must meet the
+        // camera housing's actual width and height without a visible rim.
+        closedSize = header.notchSize
         // A new presentation must discard any date movement from the last one,
         // including an animation interrupted by a quick close and reopen.
         presentationID &+= 1
@@ -429,12 +517,12 @@ private final class NotchSurfaceView: NSView {
         CATransaction.commit()
     }
 
-    func resetToNotch() {
+    func resetToClosed() {
         CATransaction.begin()
         CATransaction.setDisableActions(true)
         silhouette.removeAllAnimations()
         host.layer?.removeAnimation(forKey: "lunera.fade")
-        silhouette.path = path(size: collapsedSize)
+        silhouette.path = path(size: closedSize)
         host.layer?.opacity = 0
         CATransaction.commit()
     }
@@ -442,7 +530,7 @@ private final class NotchSurfaceView: NSView {
     func morph(to size: CGSize, motion: PanelMotion, completion: @escaping @MainActor () -> Void) {
         let visiblePath = silhouette.animation(forKey: "lunera.shape") == nil
             ? silhouette.path : (silhouette.presentation()?.path ?? silhouette.path)
-        let start = visiblePath?.boundingBoxOfPath.size ?? collapsedSize
+        let start = visiblePath?.boundingBoxOfPath.size ?? closedSize
         let reduced = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
         CATransaction.begin()
         CATransaction.setDisableActions(true)
