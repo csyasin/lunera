@@ -30,10 +30,19 @@ private struct NotchHeaderLayoutKey: EnvironmentKey {
     static let defaultValue = NotchHeaderLayout.fallback
 }
 
+private struct CalendarPresentationIDKey: EnvironmentKey {
+    static let defaultValue: UInt = 0
+}
+
 extension EnvironmentValues {
     var notchHeaderLayout: NotchHeaderLayout {
         get { self[NotchHeaderLayoutKey.self] }
         set { self[NotchHeaderLayoutKey.self] = newValue }
+    }
+
+    var calendarPresentationID: UInt {
+        get { self[CalendarPresentationIDKey.self] }
+        set { self[CalendarPresentationIDKey.self] = newValue }
     }
 }
 
@@ -370,10 +379,13 @@ private final class NotchSurfaceView: NSView {
     private let host: NSHostingView<AnyView>
     private(set) var collapsedSize = NSSize(width: 200, height: 24)
     private var contentHeight = NotchHeaderLayout.fallback.maximumPanelHeight
+    private var presentationID: UInt = 0
 
     init(content: AnyView, size: NSSize) {
         originalContent = content
-        host = NSHostingView(rootView: AnyView(content.environment(\.notchHeaderLayout, .fallback)))
+        host = NSHostingView(rootView: AnyView(content
+            .environment(\.notchHeaderLayout, .fallback)
+            .environment(\.calendarPresentationID, 0)))
         super.init(frame: NSRect(origin: .zero, size: size))
         wantsLayer = true
         layer?.backgroundColor = NSColor.black.cgColor
@@ -396,7 +408,12 @@ private final class NotchSurfaceView: NSView {
         collapsedSize = header.reservedWidth > 0
             ? NSSize(width: max(160, header.reservedWidth), height: screen.safeAreaInsets.top)
             : NSSize(width: 200, height: 24)
-        host.rootView = AnyView(originalContent.environment(\.notchHeaderLayout, header))
+        // A new presentation must discard any date movement from the last one,
+        // including an animation interrupted by a quick close and reopen.
+        presentationID &+= 1
+        host.rootView = AnyView(originalContent
+            .environment(\.notchHeaderLayout, header)
+            .environment(\.calendarPresentationID, presentationID))
     }
 
     func place(canvas: CGSize) {

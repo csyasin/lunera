@@ -6,8 +6,8 @@ enum ThemeColor {
     static let preferenceKey = "appearance.accentHex"
     static let systemValue = "system"
     static let presets: [(name: String, hex: String)] = [
-        ("薄荷", "9EE8C9"), ("天蓝", "8ACBFF"), ("紫藤", "C4ACFF"),
-        ("玫瑰", "FFACC8"), ("蜜桃", "FFBE98"), ("暖黄", "F4DC8A")
+        ("松石", "2D7168"), ("深海", "3A64A0"), ("暮紫", "65549A"),
+        ("莓红", "9A4D6D"), ("陶土", "96523D"), ("古铜", "826331")
     ]
 
     static func color(_ value: String) -> Color {

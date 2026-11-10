@@ -27,6 +27,22 @@ struct CalendarEvent: Identifiable {
     let isAllDay: Bool
     let color: NSColor
 
+    /// Total elapsed time, including any portion outside the selected day.
+    var durationLabel: String {
+        let seconds = endDate.timeIntervalSince(startDate)
+        guard seconds > 0 else { return "0分钟" }
+        guard seconds >= 60 else { return "不足1分钟" }
+        let totalMinutes = Int(seconds / 60)
+        let days = totalMinutes / (24 * 60)
+        let hours = totalMinutes / 60 % 24
+        let minutes = totalMinutes % 60
+        var parts: [String] = []
+        if days > 0 { parts.append("\(days)天") }
+        if hours > 0 { parts.append("\(hours)小时") }
+        if minutes > 0 { parts.append("\(minutes)分钟") }
+        return parts.joined()
+    }
+
     func occurs(on date: Date, calendar: Calendar = gregorianCalendar()) -> Bool {
         let start = calendar.startOfDay(for: date)
         guard let end = calendar.date(byAdding: .day, value: 1, to: start) else { return false }
@@ -84,7 +100,9 @@ final class CalendarStore: ObservableObject {
             NotificationCenter.default.publisher(for: name)
                 .receive(on: RunLoop.main)
                 .sink { [weak self] _ in
-                    Task { @MainActor [weak self] in self?.refreshForEnvironmentChange() }
+                    Task { @MainActor [weak self] in
+                        self?.refreshForEnvironmentChange(calendar: gregorianCalendar())
+                    }
                 }
                 .store(in: &subscriptions)
         }
@@ -121,6 +139,16 @@ final class CalendarStore: ObservableObject {
     var selectedLunarTitle: String { "农历" + Self.lunarLabel(for: selectedDate) }
     var selectedEvents: [CalendarEvent] { events(on: selectedDate) }
 
+    /// Keep the selected day's agenda available while browsing another month.
+    /// Separate queries avoid fetching every event between distant dates.
+    var eventQueryIntervals: [DateInterval] {
+        let calendar = gregorianCalendar()
+        guard let month = calendar.dateInterval(of: .month, for: displayMonth) else { return [] }
+        if selectedDate >= month.start && selectedDate < month.end { return [month] }
+        guard let day = calendar.dateInterval(of: .day, for: selectedDate) else { return [month] }
+        return [month, day]
+    }
+
     func events(on date: Date) -> [CalendarEvent] {
         events.filter { $0.occurs(on: date) }
     }
@@ -138,11 +166,8 @@ final class CalendarStore: ObservableObject {
     func moveMonth(_ offset: Int) {
         let calendar = gregorianCalendar()
         guard let target = calendar.date(byAdding: .month, value: offset, to: displayMonth),
-              let start = calendar.dateInterval(of: .month, for: target)?.start,
-              let range = calendar.range(of: .day, in: .month, for: start) else { return }
-        let selectedDay = min(calendar.component(.day, from: selectedDate), range.count)
+              let start = calendar.dateInterval(of: .month, for: target)?.start else { return }
         displayMonth = start
-        selectedDate = calendar.date(byAdding: .day, value: selectedDay - 1, to: start) ?? start
         refresh()
     }
 
@@ -191,15 +216,20 @@ final class CalendarStore: ObservableObject {
         @unknown default: authorization = .unknown
         }
         if authorization == .authorized { authorizationError = nil }
-        guard authorization == .authorized,
-              let interval = gregorianCalendar().dateInterval(of: .month, for: displayMonth) else {
+        guard authorization == .authorized else {
             events = []
             return
         }
-        let predicate = eventStore.predicateForEvents(withStart: interval.start, end: interval.end, calendars: nil)
-        events = eventStore.events(matching: predicate).map { event in
-            CalendarEvent(
-                id: "\(event.calendarItemIdentifier)-\(event.startDate.timeIntervalSinceReferenceDate)",
+        var seenIDs = Set<String>()
+        events = eventQueryIntervals.flatMap { interval in
+            let predicate = eventStore.predicateForEvents(withStart: interval.start, end: interval.end, calendars: nil)
+            return eventStore.events(matching: predicate)
+        }.compactMap { event -> CalendarEvent? in
+            // A long event can overlap both the displayed month and selected day.
+            let id = "\(event.calendarItemIdentifier)-\(event.startDate.timeIntervalSinceReferenceDate)"
+            guard seenIDs.insert(id).inserted else { return nil }
+            return CalendarEvent(
+                id: id,
                 title: event.title?.isEmpty == false ? event.title : "（无标题）",
                 startDate: event.startDate,
                 endDate: event.endDate,
@@ -212,17 +242,18 @@ final class CalendarStore: ObservableObject {
         }
     }
 
-    private func refreshForEnvironmentChange() {
-        let calendar = gregorianCalendar()
+    func refreshForEnvironmentChange(calendar: Calendar) {
         if lastTimeZone != calendar.timeZone {
             var oldCalendar = calendar
             oldCalendar.timeZone = lastTimeZone
-            let civilDate = oldCalendar.dateComponents([.era, .year, .month, .day], from: selectedDate)
-            selectedDate = calendar.date(from: civilDate) ?? selectedDate
+            let selectedCivilDate = oldCalendar.dateComponents([.era, .year, .month, .day], from: selectedDate)
+            let displayedCivilDate = oldCalendar.dateComponents([.era, .year, .month, .day], from: displayMonth)
+            selectedDate = calendar.date(from: selectedCivilDate) ?? selectedDate
+            displayMonth = calendar.date(from: displayedCivilDate) ?? displayMonth
             lastTimeZone = calendar.timeZone
         }
         selectedDate = calendar.startOfDay(for: selectedDate)
-        displayMonth = calendar.dateInterval(of: .month, for: selectedDate)?.start ?? selectedDate
+        displayMonth = calendar.dateInterval(of: .month, for: displayMonth)?.start ?? displayMonth
         refresh()
     }
 

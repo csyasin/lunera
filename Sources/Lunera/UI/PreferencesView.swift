@@ -214,7 +214,7 @@ struct PreferencesView: View {
 
     private func editCustomColor() {
         if customAccentHex.isEmpty {
-            customAccentHex = ThemeColor.hex(accent) ?? "9EE8C9"
+            customAccentHex = ThemeColor.hex(accent) ?? ThemeColor.presets[0].hex
         }
         accentSource = "custom"
         accentHex = customAccentHex
