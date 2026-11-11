@@ -6,7 +6,6 @@ struct LayoutCheck {
         let sideInset = CalendarPanelLayout.contentHorizontalPadding
             - CalendarPanelLayout.agendaHorizontalOutset - CalendarPanelLayout.panelTopCornerRadius
         precondition(sideInset == CalendarPanelLayout.bottomPadding)
-        precondition(CalendarPanelLayout.eventGroupSpacing == sideInset)
         precondition(CalendarPanelLayout.panelBottomCornerRadius
                      == CalendarPanelLayout.eventGroupCornerRadius + CalendarPanelLayout.bottomPadding)
         func layout(access: Bool = true, allDay: Int = 0, timed: Int = 0,

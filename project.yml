@@ -33,6 +33,11 @@ targets:
         CFBundleDisplayName: Lunera
         CFBundleShortVersionString: '$(MARKETING_VERSION)'
         CFBundleVersion: '$(CURRENT_PROJECT_VERSION)'
+        CFBundleURLTypes:
+          - CFBundleTypeRole: Editor
+            CFBundleURLName: com.yasin.lunera.panel
+            CFBundleURLSchemes:
+              - lunera
         LSUIElement: true
         LuneraUpdatesEnabled: '$(LUNERA_UPDATES_ENABLED)'
         SUFeedURL: https://github.com/csyasin/lunera/releases/latest/download/appcast.xml

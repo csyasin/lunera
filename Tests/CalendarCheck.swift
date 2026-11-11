@@ -10,10 +10,37 @@ struct Check {
             gregorian.date(from: DateComponents(year: year, month: month, day: day, hour: 12))!
         }
         let store = CalendarStore(now: date(2024, 2, 10))
+        func checkGrid(monthDayCount: Int, cellCount: Int) {
+            let days = store.days.compactMap { $0 }
+            precondition(store.days.count == cellCount && days.count == cellCount)
+            precondition(days.filter(\.isInDisplayedMonth).count == monthDayCount)
+            precondition(gregorian.component(.weekday, from: days.first!.date) == 1)
+            precondition(gregorian.component(.weekday, from: days.last!.date) == 7)
+            for (index, day) in days.enumerated() {
+                precondition(day.date == gregorian.date(byAdding: .day, value: index, to: days.first!.date))
+                precondition(day.isInDisplayedMonth
+                             == gregorian.isDate(day.date, equalTo: store.displayMonth, toGranularity: .month))
+            }
+            precondition(store.visibleGridInterval == DateInterval(
+                start: days.first!.date,
+                end: gregorian.date(byAdding: .day, value: 1, to: days.last!.date)!
+            ))
+        }
         precondition(store.days.count == 35)
-        precondition(store.days.prefix(4).allSatisfy { $0 == nil })
-        precondition(store.days.compactMap { $0 }.count == 29)
+        checkGrid(monthDayCount: 29, cellCount: 35)
+        precondition(store.days.prefix(4).compactMap { $0?.dayNumber } == [28, 29, 30, 31])
+        precondition(store.days.prefix(4).allSatisfy { $0?.isInDisplayedMonth == false })
+        precondition(store.days.suffix(2).compactMap { $0?.dayNumber } == [1, 2])
+        precondition(store.days.suffix(2).allSatisfy { $0?.isInDisplayedMonth == false })
         precondition(store.selectedLunarTitle == "农历正月初一", store.selectedLunarTitle)
+        let leadingDate = store.days.first!!.date
+        let trailingDate = store.days.last!!.date
+        store.select(leadingDate)
+        precondition(store.selectedDate == gregorian.startOfDay(for: date(2024, 1, 28)))
+        precondition(store.displayMonth == gregorian.startOfDay(for: date(2024, 1, 1)))
+        store.select(trailingDate)
+        precondition(store.selectedDate == gregorian.startOfDay(for: date(2024, 3, 2)))
+        precondition(store.displayMonth == gregorian.startOfDay(for: date(2024, 3, 1)))
         store.select(date(2023, 3, 22))
         precondition(store.selectedLunarTitle == "农历闰二月初一", store.selectedLunarTitle)
         store.select(date(2024, 1, 31))
@@ -21,28 +48,29 @@ struct Check {
         store.moveMonth(1)
         precondition(store.selectedDate == januarySelection)
         precondition(store.displayMonth == gregorian.startOfDay(for: date(2024, 2, 1)))
-        precondition(store.days.compactMap { $0 }.count == 29)
-        precondition(!store.days.compactMap { $0 }.contains { gregorian.isDate($0.date, inSameDayAs: store.selectedDate) })
-        precondition(store.eventQueryIntervals == [gregorian.dateInterval(of: .month, for: date(2024, 2, 1))!,
-                                                   gregorian.dateInterval(of: .day, for: januarySelection)!])
+        checkGrid(monthDayCount: 29, cellCount: 35)
+        precondition(store.days.compactMap { $0 }.contains { gregorian.isDate($0.date, inSameDayAs: store.selectedDate) })
+        precondition(store.eventQueryIntervals == [store.visibleGridInterval!])
 
         // Paging years away must retain the agenda without querying all intervening months.
         store.moveMonth(60)
         precondition(store.selectedDate == januarySelection)
         precondition(store.displayMonth == gregorian.startOfDay(for: date(2029, 2, 1)))
         precondition(store.eventQueryIntervals.count == 2)
-        precondition(store.eventQueryIntervals.allSatisfy { $0.duration <= 32 * 24 * 60 * 60 })
+        precondition(store.eventQueryIntervals[0] == store.visibleGridInterval)
+        precondition(store.eventQueryIntervals.allSatisfy { $0.duration <= 43 * 24 * 60 * 60 })
         precondition(store.eventQueryIntervals[1] == gregorian.dateInterval(of: .day, for: januarySelection))
         store.moveMonth(-61)
         precondition(store.selectedDate == januarySelection)
         precondition(store.displayMonth == gregorian.startOfDay(for: date(2024, 1, 1)))
-        precondition(store.eventQueryIntervals == [gregorian.dateInterval(of: .month, for: januarySelection)!])
+        precondition(store.eventQueryIntervals == [store.visibleGridInterval!])
 
         store.select(date(2024, 12, 31))
         let decemberSelection = store.selectedDate
         store.moveMonth(1)
         precondition(store.displayMonth == gregorian.startOfDay(for: date(2025, 1, 1)))
         precondition(store.selectedDate == decemberSelection)
+        precondition(store.eventQueryIntervals == [store.visibleGridInterval!])
         store.select(date(2025, 1, 4))
         precondition(store.selectedDate == gregorian.startOfDay(for: date(2025, 1, 4)))
         precondition(store.eventQueryIntervals.count == 1)
@@ -51,7 +79,20 @@ struct Check {
         let leapSelection = store.selectedDate
         store.moveMonth(12)
         precondition(store.selectedDate == leapSelection)
-        precondition(store.days.compactMap { $0 }.count == 28)
+        checkGrid(monthDayCount: 28, cellCount: 35)
+
+        store.select(date(2026, 2, 10))
+        checkGrid(monthDayCount: 28, cellCount: 28)
+        precondition(store.days.allSatisfy { $0?.isInDisplayedMonth == true })
+        store.select(date(2026, 8, 10))
+        checkGrid(monthDayCount: 31, cellCount: 42)
+
+        // The end of the visible grid is exclusive and needs its own selected-day query.
+        store.select(date(2024, 3, 3))
+        store.moveMonth(-1)
+        precondition(store.selectedDate == store.visibleGridInterval?.end)
+        precondition(store.eventQueryIntervals == [store.visibleGridInterval!,
+                                                   gregorian.dateInterval(of: .day, for: store.selectedDate)!])
 
         // Activation and time-zone changes preserve browsing and selection independently.
         store.select(date(2024, 1, 31))
@@ -104,6 +145,6 @@ struct Check {
         precondition(durationLabel(seconds: 30) == "不足1分钟")
         precondition(durationLabel(seconds: 0) == "0分钟")
         precondition(durationLabel(seconds: -60) == "0分钟")
-        print("Calendar grid, lunar dates, independent month navigation, agenda query coverage, time zones, today, cross-day events and elapsed durations passed")
+        print("Complete calendar weeks, adjacent-month selection, lunar dates, month navigation, visible-grid agenda coverage, time zones, today, cross-day events and elapsed durations passed")
     }
 }

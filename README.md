@@ -6,12 +6,17 @@
 
 - macOS 14 或更新版本；使用 Xcode 打开 `Lunera.xcodeproj`，选择 `Lunera` scheme 运行。
 - 也可在终端执行 `./Scripts/build.sh`，Release 应用将生成在 `build/Build/Products/Release/Lunera.app`。
+- 日期悬浮变形使用 Metal 着色器；若 Xcode 提示缺少 Metal Toolchain，可执行 `xcodebuild -downloadComponent MetalToolchain` 安装官方编译组件。发布流程会在缺少时自动安装。
 - `project.yml` 是 XcodeGen 项目定义；修改源文件结构后，可运行 `xcodegen generate` 重新生成工程。项目通过 Swift Package Manager 引入 Sparkle 2.10.0，首次构建需要获取依赖。
 - 运行 `./Scripts/test-calendar.sh` 可检查农历日期、闰年、月历导航和跨日事件的计算；`./Scripts/test-layout.sh` 检查日程区可见性、内容高度及屏幕高度上限。
 
 ## 使用
 
 打开 `Lunera.app` 后，点击屏幕菜单栏里的图标展开或收起面板。面板中的箭头用于切换月份，点击日期查看当日事件。面板获得键盘焦点时，按上箭头、左箭头、`k`、`p` 或 `h` 切换到上个月，按下箭头、右箭头、`j`、`n` 或 `l` 切换到下个月；按空格键回到今天。在面板内用触摸板向右滑动切换到上个月，向左滑动切换到下个月，每次手势翻一个月，纵向滚动仍用于浏览日程。按 Escape 或点击面板外部可收起。右键菜单栏图标可打开偏好设置或退出应用。
+
+鼠标停留或移动到日期上时，会产生以该日期为中心、向邻近日期连续衰减的局部放大效果，中心最高约放大至 1.45 倍；点击位置按相同的变形公式映射到实际日期。进入、移动、退出和翻月时均平滑过渡，快速重新进入会延续当前状态；系统开启“减少动态效果”时收回该效果。选中日期直接显示主题色底色。
+
+外部可通过 `lunera://open` 展开日历面板，也可在终端执行 `open 'lunera://open'`。应用未运行时会先启动；面板已展开时会将其置前。右键菜单栏图标，选择 **Copy Launch Link** 可复制该链接。首次使用需先打开一次应用，让 macOS 注册这个 URL Scheme。
 
 ## 日历权限
 

@@ -15,6 +15,7 @@ struct CalendarDay: Identifiable {
     let dayNumber: Int
     let lunarLabel: String
     let isToday: Bool
+    let isInDisplayedMonth: Bool
 
     var id: Date { date }
 }
@@ -109,22 +110,32 @@ final class CalendarStore: ObservableObject {
         refresh()
     }
 
-    /// A Sunday-first month grid with empty cells outside the visible month.
+    /// Complete Sunday-through-Saturday weeks surrounding the displayed month.
+    var visibleGridInterval: DateInterval? {
+        let calendar = gregorianCalendar()
+        guard let month = calendar.dateInterval(of: .month, for: displayMonth),
+              let monthDays = calendar.range(of: .day, in: .month, for: displayMonth) else { return nil }
+        let leading = calendar.component(.weekday, from: month.start) - 1
+        let dayCount = (leading + monthDays.count + 6) / 7 * 7
+        guard let start = calendar.date(byAdding: .day, value: -leading, to: month.start),
+              let end = calendar.date(byAdding: .day, value: dayCount, to: start) else { return nil }
+        return DateInterval(start: start, end: end)
+    }
+
+    /// Retains the optional-cell API while filling every visible cell with a date.
     var days: [CalendarDay?] {
         let calendar = gregorianCalendar()
-        guard let interval = calendar.dateInterval(of: .month, for: displayMonth),
-              let dayRange = calendar.range(of: .day, in: .month, for: displayMonth) else { return [] }
-        let leading = calendar.component(.weekday, from: interval.start) - 1
-        var result: [CalendarDay?] = Array(repeating: nil, count: leading)
-        for offset in 0..<dayRange.count {
+        guard let interval = visibleGridInterval,
+              let dayCount = calendar.dateComponents([.day], from: interval.start, to: interval.end).day else { return [] }
+        var result: [CalendarDay?] = []
+        for offset in 0..<dayCount {
             guard let date = calendar.date(byAdding: .day, value: offset, to: interval.start) else { continue }
             result.append(CalendarDay(date: date,
                                       dayNumber: calendar.component(.day, from: date),
                                       lunarLabel: Self.lunarLabel(for: date),
-                                      isToday: calendar.isDateInToday(date)))
+                                      isToday: calendar.isDateInToday(date),
+                                      isInDisplayedMonth: calendar.isDate(date, equalTo: displayMonth, toGranularity: .month)))
         }
-        let trailing = (7 - result.count % 7) % 7
-        result.append(contentsOf: Array(repeating: nil, count: trailing))
         return result
     }
 
@@ -143,10 +154,10 @@ final class CalendarStore: ObservableObject {
     /// Separate queries avoid fetching every event between distant dates.
     var eventQueryIntervals: [DateInterval] {
         let calendar = gregorianCalendar()
-        guard let month = calendar.dateInterval(of: .month, for: displayMonth) else { return [] }
-        if selectedDate >= month.start && selectedDate < month.end { return [month] }
-        guard let day = calendar.dateInterval(of: .day, for: selectedDate) else { return [month] }
-        return [month, day]
+        guard let grid = visibleGridInterval else { return [] }
+        if selectedDate >= grid.start && selectedDate < grid.end { return [grid] }
+        guard let day = calendar.dateInterval(of: .day, for: selectedDate) else { return [grid] }
+        return [grid, day]
     }
 
     func events(on date: Date) -> [CalendarEvent] {
@@ -225,7 +236,7 @@ final class CalendarStore: ObservableObject {
             let predicate = eventStore.predicateForEvents(withStart: interval.start, end: interval.end, calendars: nil)
             return eventStore.events(matching: predicate)
         }.compactMap { event -> CalendarEvent? in
-            // A long event can overlap both the displayed month and selected day.
+            // A long event can overlap both the visible grid and selected day.
             let id = "\(event.calendarItemIdentifier)-\(event.startDate.timeIntervalSinceReferenceDate)"
             guard seenIDs.insert(id).inserted else { return nil }
             return CalendarEvent(

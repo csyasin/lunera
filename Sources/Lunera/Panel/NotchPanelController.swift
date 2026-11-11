@@ -168,6 +168,7 @@ final class NotchPanelController: NSObject {
             let menu = NSMenu()
             menu.autoenablesItems = false
             menu.addItem(withTitle: isPresented ? "Hide Lunera" : "Open Lunera", action: #selector(toggleFromMenu), keyEquivalent: "")
+            menu.addItem(withTitle: "Copy Launch Link", action: #selector(copyLaunchLink), keyEquivalent: "")
             menu.addItem(.separator())
             menu.addItem(withTitle: "Settings…", action: #selector(openPreferences), keyEquivalent: ",")
             let checkUpdates = menu.addItem(withTitle: "Check for Updates…", action: #selector(checkForUpdatesFromMenu), keyEquivalent: "")
@@ -182,6 +183,11 @@ final class NotchPanelController: NSObject {
     }
 
     @objc private func toggleFromMenu() { toggle() }
+    @objc private func copyLaunchLink() {
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        pasteboard.setString(LuneraLink.openPanelURL, forType: .string)
+    }
     @objc private func openPreferences() { onPreferences() }
     @objc private func checkForUpdatesFromMenu() {
         guard canCheckForUpdates() else { return }
@@ -195,8 +201,11 @@ final class NotchPanelController: NSObject {
     }
 
     func show() {
-        guard !isPresented,
-              let screen = screenAtMouse() ?? NSScreen.main ?? NSScreen.screens.first else { return }
+        if isPresented {
+            panel.makeKeyAndOrderFront(nil)
+            return
+        }
+        guard let screen = screenAtMouse() ?? NSScreen.main ?? NSScreen.screens.first else { return }
         // Reset the visible date and refresh external calendar changes before
         // calculating the expanded panel's height.
         store.goToToday()

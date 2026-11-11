@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A14E4C1B5CF2487D8B44F902 /* CalendarHoverLens.swift in Sources */ = {isa = PBXBuildFile; fileRef = A14E4C1B5CF2487D8B44F901 /* CalendarHoverLens.swift */; };
+		A14E4C1B5CF2487D8B44F904 /* CalendarHoverLens.metal in Sources */ = {isa = PBXBuildFile; fileRef = A14E4C1B5CF2487D8B44F903 /* CalendarHoverLens.metal */; };
 		395B63DF2A80660B8CE99B35 /* CalendarPanelLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD4E4452E85EDA425F951C9F /* CalendarPanelLayout.swift */; };
 		4FAA157198203A5ECCD8C9BD /* CalendarStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83A8E7F5EFF28F8E5BDDF947 /* CalendarStore.swift */; };
 		698BD826CE11DFE44D4895A8 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 98686C744DC705924837625A /* Sparkle */; };
@@ -20,6 +22,8 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		A14E4C1B5CF2487D8B44F901 /* CalendarHoverLens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarHoverLens.swift; sourceTree = "<group>"; };
+		A14E4C1B5CF2487D8B44F903 /* CalendarHoverLens.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = CalendarHoverLens.metal; sourceTree = "<group>"; };
 		2FEE96934E068905BA72F989 /* LuneraApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LuneraApp.swift; sourceTree = "<group>"; };
 		4F1A4E7C9AFC197EA33CAF1F /* Lunera.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Lunera.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		5B4AA653F532716BA18186D8 /* CalendarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarView.swift; sourceTree = "<group>"; };
@@ -55,6 +59,8 @@
 		34312B532E2C0BA3D44C0C86 /* UI */ = {
 			isa = PBXGroup;
 			children = (
+				A14E4C1B5CF2487D8B44F901 /* CalendarHoverLens.swift */,
+				A14E4C1B5CF2487D8B44F903 /* CalendarHoverLens.metal */,
 				DD4E4452E85EDA425F951C9F /* CalendarPanelLayout.swift */,
 				5B4AA653F532716BA18186D8 /* CalendarView.swift */,
 				D9A7E15701641CB5050AC42F /* PreferencesView.swift */,
@@ -177,6 +183,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A14E4C1B5CF2487D8B44F902 /* CalendarHoverLens.swift in Sources */,
+				A14E4C1B5CF2487D8B44F904 /* CalendarHoverLens.metal in Sources */,
 				A0C54099F879076ED0CE6AEB /* AppUpdater.swift in Sources */,
 				395B63DF2A80660B8CE99B35 /* CalendarPanelLayout.swift in Sources */,
 				4FAA157198203A5ECCD8C9BD /* CalendarStore.swift in Sources */,

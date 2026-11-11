@@ -2,10 +2,6 @@ import AppKit
 import QuartzCore
 import SwiftUI
 
-private enum CalendarSelectionAnimation {
-    static let duration: TimeInterval = 0.20
-}
-
 struct CalendarView: View {
     @ObservedObject var store: CalendarStore
     @Environment(\.notchHeaderLayout) private var notchHeaderLayout
@@ -14,9 +10,7 @@ struct CalendarView: View {
     @AppStorage(ThemeColor.preferenceKey) private var accentHex = ThemeColor.systemValue
 
     private var accent: Color { ThemeColor.color(accentHex) }
-    private var selectedText: Color { ThemeColor.keyInk(accentHex) }
     private let muted = Color.white.opacity(0.58)
-    private let columns = Array(repeating: GridItem(.flexible(), spacing: 0), count: 7)
     private let weekdays = ["日", "一", "二", "三", "四", "五", "六"]
     var body: some View {
         let days = store.days
@@ -27,15 +21,36 @@ struct CalendarView: View {
                             allDayCount: events.filter(\.isAllDay).count,
                             timedEventCount: events.filter { !$0.isAllDay }.count,
                             maximumHeight: notchHeaderLayout.maximumPanelHeight)
+        let monthPage = CalendarMonthPage(month: store.displayMonth, days: days,
+                                          events: store.events, dayHeight: layout.dayHeight)
+        let monthCanvasHeight = layout.gridHeight + 2 * CalendarPanelLayout.gridOverflowPadding
         return VStack(alignment: .leading, spacing: 0) {
             header
                 .frame(height: notchHeaderLayout.bandHeight)
             weekdayHeader
                 .frame(height: CalendarPanelLayout.weekdayHeight)
+                .padding(.horizontal, CalendarPanelLayout.gridHorizontalPadding - CalendarPanelLayout.contentHorizontalPadding)
                 .padding(.top, CalendarPanelLayout.weekdayTopSpacing)
-            calendarGrid(days, dayHeight: layout.dayHeight)
-                .frame(height: layout.gridHeight)
-                .padding(.top, CalendarPanelLayout.gridTopSpacing)
+            CalendarMonthPager(
+                month: monthPage.month,
+                height: monthCanvasHeight,
+                selection: store.selectedDate,
+                content: { [accentHex, reduceMotion, presentationID, onSelect = store.select] selection, hoverEnabled in
+                    AnyView(CalendarMonthGrid(
+                        page: monthPage, selection: selection,
+                        accentHex: accentHex, hoverEnabled: hoverEnabled,
+                        reduceMotion: reduceMotion, presentationID: presentationID, onSelect: onSelect
+                    ).preferredColorScheme(.dark))
+                },
+                reduceMotion: reduceMotion,
+                presentationID: presentationID
+            )
+                .frame(height: monthCanvasHeight)
+                // Move the existing side margins inside the clipped page. Its
+                // transparent canvas can then contain the enlarged edge dates.
+                .padding(.horizontal, -CalendarPanelLayout.contentHorizontalPadding)
+                .padding(.top, CalendarPanelLayout.gridTopSpacing - CalendarPanelLayout.gridOverflowPadding)
+                .padding(.bottom, -CalendarPanelLayout.gridOverflowPadding)
             if store.authorization == .authorized {
                 agenda(events: events, layout: layout)
                     .padding(.horizontal, -CalendarPanelLayout.agendaHorizontalOutset)
@@ -93,102 +108,6 @@ struct CalendarView: View {
                     .frame(maxWidth: .infinity)
             }
         }
-    }
-
-    private func calendarGrid(_ days: [CalendarDay?], dayHeight: CGFloat) -> some View {
-        LazyVGrid(columns: columns, spacing: CalendarPanelLayout.gridSpacing) {
-            ForEach(Array(days.enumerated()), id: \.offset) { _, day in
-                if let day {
-                    dayCell(day, height: dayHeight)
-                        .id(day.id)
-                } else {
-                    Color.clear.frame(height: dayHeight)
-                        .accessibilityHidden(true)
-                }
-            }
-        }
-        .overlay {
-            GeometryReader { geometry in
-                let index = days.firstIndex(where: { day in
-                    day.map { Calendar.current.isDate($0.date, inSameDayAs: store.selectedDate) } ?? false
-                })
-                let cellWidth = geometry.size.width / 7
-                CalendarSelectionHighlight(
-                    selection: store.selectedDate,
-                    displayMonth: store.displayMonth,
-                    target: index.map {
-                        CGRect(x: CGFloat($0 % 7) * cellWidth + 3,
-                               y: CGFloat($0 / 7) * (dayHeight + CalendarPanelLayout.gridSpacing),
-                               width: max(0, cellWidth - 6), height: dayHeight)
-                    },
-                    content: AnyView(selectionContent(days, dayHeight: dayHeight)),
-                    reduceMotion: reduceMotion,
-                    presentationID: presentationID
-                )
-            }
-            .allowsHitTesting(false)
-            .accessibilityHidden(true)
-        }
-    }
-
-    private func selectionContent(_ days: [CalendarDay?], dayHeight: CGFloat) -> some View {
-        LazyVGrid(columns: columns, spacing: CalendarPanelLayout.gridSpacing) {
-            ForEach(Array(days.enumerated()), id: \.offset) { _, day in
-                if let day {
-                    dayContent(day, events: store.events(on: day.date), height: dayHeight, highlighted: true)
-                        .id(day.id)
-                } else {
-                    Color.clear.frame(height: dayHeight)
-                }
-            }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(accent)
-        .preferredColorScheme(.dark)
-    }
-
-    private func dayCell(_ day: CalendarDay, height: CGFloat) -> some View {
-        let selected = Calendar.current.isDate(day.date, inSameDayAs: store.selectedDate)
-        let dayEvents = store.events(on: day.date)
-        return Button {
-            store.select(day.date)
-        } label: {
-            dayContent(day, events: dayEvents, height: height, highlighted: false)
-                .background {
-                    if day.isToday && !selected {
-                        RoundedRectangle(cornerRadius: 15, style: .continuous)
-                            .strokeBorder(Color.white.opacity(0.22), lineWidth: 1)
-                            .padding(.horizontal, 3)
-                    }
-                }
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("\(day.dayNumber)日，\(day.lunarLabel)，\(dayEvents.count)个日程")
-        .accessibilityAddTraits(selected ? .isSelected : [])
-    }
-
-    private func dayContent(_ day: CalendarDay, events: [CalendarEvent], height: CGFloat,
-                            highlighted: Bool) -> some View {
-        let selected = Calendar.current.isDate(day.date, inSameDayAs: store.selectedDate)
-        return VStack(spacing: 2) {
-            Text("\(day.dayNumber)")
-                .font(.system(size: 16, weight: selected || day.isToday ? .semibold : .medium, design: .rounded))
-                .foregroundStyle(highlighted ? selectedText : .white)
-            Text(day.lunarLabel)
-                .font(.system(size: 9))
-                .lineLimit(1)
-                .minimumScaleFactor(0.75)
-                .foregroundStyle(highlighted ? selectedText.opacity(0.86) : muted)
-            HStack(spacing: 3) {
-                ForEach(Array(events.prefix(3).enumerated()), id: \.offset) { _, event in
-                    Circle().fill(Color(nsColor: event.color)).frame(width: 4, height: 4)
-                }
-            }
-            .frame(height: 4)
-        }
-        .frame(maxWidth: .infinity)
-        .frame(height: height)
     }
 
     private let eventTimeWidth: CGFloat = 58
@@ -405,131 +324,395 @@ struct CalendarView: View {
     }
 }
 
-/// Retarget one highlight from its visible position, including during rapid clicks.
-private struct CalendarSelectionHighlight: NSViewRepresentable {
+private typealias CalendarMonthContent = (Date?, Bool) -> AnyView
+
+/// Each page keeps its dates and event markers while it slides out.
+private struct CalendarMonthPage {
+    let month: Date
+    let days: [CalendarDay?]
+    let events: [CalendarEvent]
+    let dayHeight: CGFloat
+
+    func events(on date: Date) -> [CalendarEvent] {
+        events.filter { $0.occurs(on: date) }
+    }
+}
+
+@MainActor
+private final class CalendarHoverInput {
+    var hoverPoint: CGPoint?
+    var location: CGPoint?
+
+    func clear() {
+        hoverPoint = nil
+        location = nil
+    }
+}
+
+/// Only shader uniforms observe the frame clock; dates and event markers do
+/// not need to be rebuilt for every animation frame or raw pointer movement.
+private struct CalendarHoverEffect: ViewModifier {
+    @ObservedObject var hover: CalendarHoverController
+    let canvas: CalendarHoverCanvas
+
+    func body(content: Content) -> some View {
+        content.distortionEffect(
+            ShaderLibrary.calendarHoverLens(
+                .float2(canvas.canvasPosition(for: hover.lens.focus)), .float2(canvas.geometry.cellPitch),
+                .float(CalendarHoverLens.radius), .float(hover.lens.strength),
+                .float(CalendarHoverLens.maximumStrength)
+            ),
+            maxSampleOffset: CalendarHoverLens.maximumSampleOffset(cellPitch: canvas.geometry.cellPitch),
+            isEnabled: hover.lens.strength > 0
+        )
+    }
+}
+
+private struct CalendarMonthGrid: View {
+    let page: CalendarMonthPage
+    let selection: Date?
+    let accentHex: String
+    let hoverEnabled: Bool
+    let reduceMotion: Bool
+    let presentationID: UInt
+    let onSelect: (Date) -> Void
+    @State private var hover = CalendarHoverController()
+    @State private var pointer = CalendarHoverInput()
+
+    private var accent: Color { ThemeColor.color(accentHex) }
+    private var selectedText: Color { ThemeColor.keyInk(accentHex) }
+    private let muted = Color.white.opacity(0.58)
+    private let adjacentDayOpacity = 0.4
+    private let columns = Array(repeating: GridItem(.flexible(), spacing: 0), count: 7)
+
+    var body: some View {
+        GeometryReader { proxy in
+            let canvas = CalendarHoverCanvas(size: proxy.size, dayHeight: page.dayHeight,
+                                              rowCount: page.days.count / 7)
+            let geometry = canvas.geometry
+            monthGrid(geometry: geometry)
+                .frame(width: geometry.size.width, height: geometry.size.height, alignment: .topLeading)
+                // Padding must be part of the shader's input, not outside it.
+                .padding(.horizontal, canvas.contentOrigin.x)
+                .padding(.vertical, canvas.contentOrigin.y)
+                .modifier(CalendarHoverEffect(hover: hover, canvas: canvas))
+                // The AppKit clock stays outside the filtered SwiftUI layer.
+                .background(CalendarHoverFrameSource(controller: hover)
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true))
+                .contentShape(Rectangle())
+                .onContinuousHover { phase in
+                    switch phase {
+                    case .active(let point):
+                        let location = canvas.gridPosition(for: point)
+                        pointer.location = location
+                        guard hoverEnabled, !reduceMotion else {
+                            pointer.hoverPoint = nil
+                            hover.end()
+                            return
+                        }
+                        if geometry.index(at: location) != nil {
+                            pointer.hoverPoint = location
+                            updateHover(geometry: geometry)
+                        } else if date(at: location, geometry: geometry) == nil {
+                            pointer.hoverPoint = nil
+                            hover.end()
+                        }
+                        // An enlarged date can occupy the transparent margin.
+                        // Retain its last valid focus while hovering that fringe.
+                    case .ended:
+                        pointer.clear()
+                        hover.end()
+                    }
+                }
+                .simultaneousGesture(SpatialTapGesture(coordinateSpace: .local).onEnded { value in
+                    let location = canvas.gridPosition(for: value.location)
+                    // Buttons handle the original grid; this disjoint route
+                    // makes only the enlarged, out-of-grid pixels clickable.
+                    guard geometry.index(at: location) == nil,
+                          let date = date(at: location, geometry: geometry) else { return }
+                    onSelect(date)
+                })
+                .onChange(of: hoverEnabled) { _, _ in updateHover(geometry: geometry) }
+                .onChange(of: reduceMotion) { _, _ in updateHover(geometry: geometry) }
+                .onChange(of: geometry) { _, _ in
+                    hover.end()
+                    updateHover(geometry: geometry)
+                }
+                .onChange(of: presentationID) { _, _ in
+                    pointer.clear()
+                    hover.end()
+                }
+                .onDisappear {
+                    pointer.clear()
+                    hover.reset()
+                }
+        }
+    }
+
+    private func monthGrid(geometry: CalendarHoverGeometry) -> some View {
+        // Include the visual row gaps in the buttons' hit areas, so the warped
+        // image has no dead strips between otherwise clickable dates.
+        LazyVGrid(columns: columns, spacing: 0) {
+            ForEach(Array(page.days.enumerated()), id: \.offset) { index, day in
+                if let day {
+                    dayCell(day, index: index, geometry: geometry)
+                        .id(day.id)
+                } else {
+                    Color.clear.frame(height: page.dayHeight)
+                        .accessibilityHidden(true)
+                }
+            }
+        }
+        .transaction { transaction in
+            transaction.animation = nil
+            transaction.disablesAnimations = true
+        }
+    }
+
+    private func updateHover(geometry: CalendarHoverGeometry) {
+        guard hoverEnabled, !reduceMotion else {
+            pointer.hoverPoint = nil
+            hover.end()
+            return
+        }
+        if let point = pointer.hoverPoint { hover.move(to: point, geometry: geometry) }
+    }
+
+    private func isSelected(_ day: CalendarDay) -> Bool {
+        guard let selection else { return false }
+        return day.isInDisplayedMonth && Calendar.current.isDate(day.date, inSameDayAs: selection)
+    }
+
+    private func dayCell(_ day: CalendarDay, index: Int, geometry: CalendarHoverGeometry) -> some View {
+        let selected = isSelected(day)
+        let dayEvents = page.events(on: day.date)
+        let bottomSpacing = index / 7 < geometry.rowCount - 1 ? CalendarPanelLayout.gridSpacing : 0
+        return Button {
+            select(day, geometry: geometry)
+        } label: {
+            dayContent(day, events: dayEvents, selected: selected)
+                .background {
+                    if selected {
+                        RoundedRectangle(cornerRadius: 15, style: .continuous)
+                            .fill(accent)
+                            .padding(.horizontal, CalendarPanelLayout.dayHighlightHorizontalInset)
+                    } else if day.isToday {
+                        RoundedRectangle(cornerRadius: 15, style: .continuous)
+                            .strokeBorder(accent, style: StrokeStyle(lineWidth: 1, dash: [3, 3]))
+                            .padding(.horizontal, CalendarPanelLayout.dayHighlightHorizontalInset)
+                    }
+                }
+                .padding(.bottom, bottomSpacing)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .opacity(day.isInDisplayedMonth ? 1 : adjacentDayOpacity)
+        .accessibilityLabel("\(day.date.formatted(.dateTime.year().month(.defaultDigits).day()))，\(day.lunarLabel)，\(dayEvents.count)个日程")
+        .accessibilityAddTraits(selected ? .isSelected : [])
+        .accessibilityAction { onSelect(day.date) }
+    }
+
+    private func select(_ fallback: CalendarDay, geometry: CalendarHoverGeometry) {
+        // Shaders deform pixels, not Button layout. Pointer activation therefore
+        // uses exactly the same destination-to-source map as the Metal shader.
+        if NSApp.currentEvent?.type == .leftMouseUp,
+           let location = pointer.location,
+           let date = date(at: location, geometry: geometry) {
+            onSelect(date)
+        } else {
+            onSelect(fallback.date)
+        }
+    }
+
+    private func date(at location: CGPoint, geometry: CalendarHoverGeometry) -> Date? {
+        let source = hover.lens.sourcePosition(for: location, cellPitch: geometry.cellPitch)
+        guard let index = geometry.index(at: source), page.days.indices.contains(index) else { return nil }
+        return page.days[index]?.date
+    }
+
+    private func dayContent(_ day: CalendarDay, events: [CalendarEvent], selected: Bool) -> some View {
+        VStack(spacing: 2) {
+            Text("\(day.dayNumber)")
+                .font(.system(size: 16, weight: selected || day.isToday ? .semibold : .medium, design: .rounded))
+                .foregroundStyle(selected ? selectedText : .white)
+            Text(day.lunarLabel)
+                .font(.system(size: 9))
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
+                .foregroundStyle(selected ? selectedText.opacity(0.86) : muted)
+            HStack(spacing: 3) {
+                ForEach(Array(events.prefix(3).enumerated()), id: \.offset) { _, event in
+                    Circle().fill(Color(nsColor: event.color)).frame(width: 4, height: 4)
+                }
+            }
+            .frame(height: 4)
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: page.dayHeight)
+    }
+}
+
+/// Keeps the weekday header outside the moving, clipped month viewport.
+private struct CalendarMonthPager: NSViewRepresentable {
+    let month: Date
+    let height: CGFloat
     let selection: Date
-    let displayMonth: Date
-    let target: CGRect?
-    let content: AnyView
+    let content: CalendarMonthContent
     let reduceMotion: Bool
     let presentationID: UInt
 
-    func makeNSView(context: Context) -> SelectionHighlightView { SelectionHighlightView(content: content) }
+    func makeNSView(context: Context) -> MonthPagerView { MonthPagerView(frame: .zero) }
 
-    func updateNSView(_ view: SelectionHighlightView, context: Context) {
-        view.update(selection: selection, displayMonth: displayMonth, target: target, content: content,
+    func updateNSView(_ view: MonthPagerView, context: Context) {
+        view.update(month: month, height: height, selection: selection, content: content,
                     reduceMotion: reduceMotion, presentationID: presentationID)
     }
 }
 
-private final class SelectionHighlightView: NSView {
-    private let highlight = CALayer()
-    private let host: NSHostingView<AnyView>
+@MainActor
+private final class MonthPagerView: NSView {
+    private struct Page {
+        let host: NSHostingView<AnyView>
+        let height: CGFloat
+        let content: CalendarMonthContent
+    }
+
+    private var pages: [Date: Page] = [:]
+    private var month: Date?
     private var selection: Date?
     private var presentationID: UInt?
-    private let animationKey = "lunera.selection"
+    private var animationID: UInt = 0
+    private var isTransitioning = false
+    private let animationKey = "lunera.month"
 
     override var isFlipped: Bool { true }
 
-    init(content: AnyView) {
-        host = NSHostingView(rootView: content)
-        super.init(frame: .zero)
+    override init(frame: NSRect) {
+        super.init(frame: frame)
         wantsLayer = true
         layer?.masksToBounds = true
-        highlight.backgroundColor = NSColor.white.cgColor
-        highlight.cornerRadius = 15
-        highlight.cornerCurve = .continuous
-        layer?.mask = highlight
-        host.sizingOptions = []
-        host.safeAreaRegions = []
-        host.wantsLayer = true
-        host.autoresizingMask = [.width, .height]
-        addSubview(host)
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
-    override func hitTest(_ point: NSPoint) -> NSView? { nil }
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        guard !isTransitioning, let hit = super.hitTest(point), let month, let host = pages[month]?.host,
+              hit === host || hit.isDescendant(of: host) else { return nil }
+        return hit
+    }
 
     override func layout() {
         super.layout()
-        host.frame = bounds
-    }
-
-    func update(selection: Date, displayMonth: Date, target: CGRect?, content: AnyView, reduceMotion: Bool,
-                presentationID: UInt) {
         CATransaction.begin()
         CATransaction.setDisableActions(true)
-        defer { CATransaction.commit() }
-        if self.presentationID != presentationID {
-            self.presentationID = presentationID
-            self.selection = nil
-            highlight.removeAnimation(forKey: animationKey)
+        for page in pages.values {
+            let frame = CGRect(x: page.host.frame.minX, y: 0, width: bounds.width, height: page.height)
+            if page.host.frame != frame { page.host.frame = frame }
         }
-        host.rootView = content
-        host.frame = bounds
-        let previousSelection = self.selection
+        CATransaction.commit()
+    }
+
+    func update(month: Date, height: CGFloat, selection: Date, content: @escaping CalendarMonthContent,
+                reduceMotion: Bool, presentationID: UInt) {
+        let previousMonth = self.month
+        let reset = self.presentationID != presentationID || reduceMotion || bounds.width <= 0
+        let startsTransition = !reset && previousMonth != nil && previousMonth != month
+        if startsTransition || self.selection != selection {
+            // Exiting snapshots cannot retain hover; selection still clears
+            // immediately when the user actually selects another date.
+            let outgoingSelection = self.selection == selection ? self.selection : nil
+            for (key, page) in pages where key != month {
+                page.host.rootView = page.content(outgoingSelection, false)
+            }
+        }
         self.selection = selection
-        guard let target else {
-            // Keep the logical selection even if its month is not visible.
-            host.isHidden = true
-            highlight.removeAnimation(forKey: animationKey)
+        self.presentationID = presentationID
+        self.month = month
+
+        // Freeze every outgoing page's content and retain its visible position.
+        var starts = pages.mapValues { page -> CGFloat in
+            guard let layer = page.host.layer else { return page.host.frame.minX }
+            return page.host.frame.minX + (layer.presentation()?.position.x ?? layer.position.x) - layer.position.x
+        }
+        let host: NSHostingView<AnyView>
+        let renderedContent = content(selection, reset || (!startsTransition && !isTransitioning))
+        if let page = pages[month] {
+            host = page.host
+            host.rootView = renderedContent
+        } else {
+            host = NSHostingView(rootView: renderedContent)
+            host.sizingOptions = []
+            host.safeAreaRegions = []
+            host.wantsLayer = true
+            host.autoresizingMask = []
+            addSubview(host)
+        }
+        pages[month] = Page(host: host, height: height, content: content)
+        needsLayout = true
+
+        if !reset, previousMonth == month { return }
+        animationID &+= 1
+        let generation = animationID
+
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        guard let previousMonth, !reset else {
+            isTransitioning = false
+            removeOutgoingPages()
+            host.layer?.removeAnimation(forKey: animationKey)
+            host.frame = CGRect(x: 0, y: 0, width: bounds.width, height: height)
+            host.setAccessibilityHidden(false)
+            CATransaction.commit()
             return
         }
 
-        var from = highlight.presentation()?.position ?? highlight.position
-        let changedSelection = previousSelection != nil && previousSelection != selection
-        if changedSelection, let previousSelection,
-           let origin = adjacentMonthOrigin(for: previousSelection, displayedMonth: displayMonth,
-                                            targetHeight: target.height) {
-            from = origin
-        }
-        let changedFrame = highlight.frame != target
-        highlight.frame = target
-        // The background and selected ink are revealed by this single mask,
-        // keeping every glyph legible as the highlight enters or leaves it.
-        host.isHidden = false
+        isTransitioning = true
+        let direction: CGFloat = month > previousMonth ? 1 : -1
+        // Discard pages that have already left the viewport. A rapid reversal can
+        // reuse a still-visible month instead of replacing it with a fresh page.
+        let invisible = pages.keys.filter { $0 != month && abs(starts[$0] ?? bounds.width) >= bounds.width }
+        for key in invisible { pages.removeValue(forKey: key)?.host.removeFromSuperview() }
+        if starts[month] == nil { starts[month] = direction * bounds.width }
+        addSubview(host, positioned: .above, relativeTo: nil)
+        host.frame = CGRect(x: starts[month] ?? 0, y: 0, width: bounds.width, height: height)
+        host.layoutSubtreeIfNeeded()
 
-        if reduceMotion || (!changedSelection && changedFrame) {
-            highlight.removeAnimation(forKey: animationKey)
-        } else if changedSelection {
-            let to = highlight.position
-            let animation = CAKeyframeAnimation(keyPath: "position")
-            // Quintic ease-in-out starts and ends with zero speed and
-            // acceleration, emphasizing the faster middle without overshoot.
-            // Retarget from the visible position when clicks interrupt it.
-            animation.values = (0...60).map { index in
-                let t = Double(index) / 60
-                let progress = t * t * t * (t * (6 * t - 15) + 10)
-                return NSValue(point: CGPoint(x: from.x + (to.x - from.x) * progress,
-                                              y: from.y + (to.y - from.y) * progress))
+        CATransaction.setCompletionBlock { [weak self] in
+            Task { @MainActor in
+                guard let self, self.animationID == generation else { return }
+                self.isTransitioning = false
+                self.removeOutgoingPages()
+                if let month = self.month, let page = self.pages[month] {
+                    page.host.rootView = page.content(self.selection, true)
+                }
             }
-            animation.duration = CalendarSelectionAnimation.duration
-            animation.calculationMode = .linear
-            highlight.add(animation, forKey: animationKey)
         }
+        for (key, page) in pages {
+            let start = starts[key] ?? page.host.frame.minX
+            let target: CGFloat = key == month ? 0 : -direction * bounds.width
+            page.host.setAccessibilityHidden(key != month)
+            // Let older pages finish exiting during held keys instead of
+            // repeatedly restarting their animation and keeping them alive.
+            if key != month, key != previousMonth, page.host.frame.minX == target { continue }
+            page.host.layer?.removeAnimation(forKey: animationKey)
+            page.host.frame = CGRect(x: target, y: 0, width: bounds.width, height: page.height)
+            if let layer = page.host.layer, start != target {
+                let animation = CABasicAnimation(keyPath: "position.x")
+                animation.fromValue = layer.position.x + start - target
+                animation.toValue = layer.position.x
+                animation.duration = 0.28
+                animation.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+                layer.add(animation, forKey: animationKey)
+            }
+        }
+        CATransaction.commit()
     }
 
-    private func adjacentMonthOrigin(for date: Date, displayedMonth: Date, targetHeight: CGFloat) -> CGPoint? {
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = .current
-        let order = calendar.compare(date, to: displayedMonth, toGranularity: .month)
-        guard order != .orderedSame,
-              let month = calendar.dateInterval(of: .month, for: date),
-              let days = calendar.range(of: .day, in: .month, for: date) else { return nil }
-        let leading = calendar.component(.weekday, from: month.start) - 1
-        let index = leading + calendar.component(.day, from: date) - 1
-        let weeks = (leading + days.count + 6) / 7
-        let dayHeight = CalendarPanelLayout.dayHeight(forWeekCount: weeks)
-        let cellY = CGFloat(index / 7) * (dayHeight + CalendarPanelLayout.gridSpacing) + dayHeight / 2
-        // Treat every earlier/later month as the adjacent page, irrespective
-        // of the actual gap. Retain its day-cell position within that page.
-        let pageOffset = order == .orderedAscending ? -bounds.width : bounds.width
-        let x = (CGFloat(index % 7) + 0.5) * bounds.width / 7 + pageOffset
-        // A six-row source month may be taller; keep entry on the side edge.
-        let halfHeight = targetHeight / 2
-        let y = min(max(cellY, halfHeight), max(halfHeight, bounds.height - halfHeight))
-        return CGPoint(x: x, y: y)
+    private func removeOutgoingPages() {
+        for key in pages.keys.filter({ $0 != month }) {
+            pages.removeValue(forKey: key)?.host.removeFromSuperview()
+        }
     }
 }
 
